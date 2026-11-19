@@ -145,10 +145,10 @@ export function Register() {
     return (
       <div className="auth-wrap">
         <Glass className="auth-card" strong>
-          <div style={{ fontSize: '2.4rem' }} aria-hidden>{role === 'farmer' ? '⏳' : '🎉'}</div>
-          <h1>{role === 'farmer' ? 'Almost there' : 'You’re in'}</h1>
+          <div style={{ fontSize: '2.4rem' }} aria-hidden>🎉</div>
+          <h1>You’re in</h1>
           <Banner kind="ok">{done}</Banner>
-          <p className="muted" style={{ marginTop: '1rem' }}>{role === 'farmer' ? 'We’ll notify you by email once your farm has been verified.' : 'Log in to start shopping.'}</p>
+          <p className="muted" style={{ marginTop: '1rem' }}>{role === 'farmer' ? 'Log in to start listing your produce.' : 'Log in to start shopping.'}</p>
           <Link className="btn primary" to="/login">Go to log in</Link>
         </Glass>
       </div>

@@ -62,11 +62,9 @@ function Chart({ series }: { series: Analytics['series'] }) {
 }
 
 function Attention() {
-  const farmers = useLoad(() => get<{ items: unknown[] }>('/admin/farmers/pending'), []);
   const complaints = useLoad(() => get<{ items: unknown[] }>('/admin/complaints', { status: 'OPEN' }), []);
   const flagged = useLoad(() => get<Paged<Order>>('/admin/orders', { stuck: 'true', pageSize: 1 }), []);
   const rows = [
-    { to: '/admin/farmers', text: 'Farmers awaiting verification', n: farmers.data?.items.length, err: farmers.error },
     { to: '/admin/complaints', text: 'Open complaints', n: complaints.data?.items.length, err: complaints.error },
     { to: '/admin/orders?attention=1', text: 'Orders needing attention', n: flagged.data?.total, err: flagged.error },
   ];

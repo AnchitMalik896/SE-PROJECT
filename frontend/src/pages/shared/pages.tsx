@@ -94,11 +94,6 @@ export function ProfilePage() {
   return (
     <div className="stack" style={{ maxWidth: 720 }}>
       <PageHead title="Your profile" subtitle={<>{user.email} · <StatusBadge status={user.status} /></>} />
-      {fp && (
-        <Banner kind={fp.verification === 'APPROVED' ? 'ok' : 'warn'}>
-          Farm verification: {fp.verification === 'APPROVED' ? 'verified — your listings are visible to customers.' : fp.verification.toLowerCase()}
-        </Banner>
-      )}
       <Glass>
         <form className="stack" onSubmit={save} noValidate>
           {error && <Banner kind="error">{error}</Banner>}

@@ -27,8 +27,7 @@ npm run dev        # API on :4000, UI on http://localhost:5173
 | Role | Login |
 |---|---|
 | Administrator | `admin@farmdirect.test` |
-| Farmer (verified) | `harpreet@farmdirect.test`, `meena@farmdirect.test` |
-| Farmer (pending verification) | `ravi@farmdirect.test` — approve him from the admin dashboard |
+| Farmer | `harpreet@farmdirect.test`, `meena@farmdirect.test`, `ravi@farmdirect.test` |
 | Customer | `asha@farmdirect.test` |
 | Delivery partner | `dev@farmdirect.test`, `sunil@farmdirect.test` |
 
@@ -38,7 +37,7 @@ npm run dev        # API on :4000, UI on http://localhost:5173
 3. Log in as **Dev** → *Available* → *Accept* → *Mark picked up* → share location → *On the way*.
 4. Back as **Asha**: open the order, read the 4-digit OTP and share it with the partner. Dev enters it under *Confirm delivery*.
 5. Harpreet's **Earnings** now show the payout; Asha can rate the products.
-6. As **admin**: verify Ravi, review payments, complaints, logs, analytics.
+6. As **admin**: review payments, complaints, logs, analytics.
 
 ## Scripts
 
@@ -75,7 +74,7 @@ SQLite by default so it runs with zero setup. The report suggests PostgreSQL + P
 
 | Requirement | Where |
 |---|---|
-| FR-01/02 registration (farmer pending, consumer active, duplicate rejection) | `backend/src/routes/auth.ts` |
+| FR-01/02 registration (farmer and consumer active immediately, duplicate rejection) | `backend/src/routes/auth.ts` |
 | FR-03/04 login/logout with revocable sessions | `backend/src/lib/auth.ts` — JWT + server-side session, so logout and blocking take effect immediately |
 | FR-05 password reset (expiring code, old password dies, sessions revoked) | `routes/auth.ts` |
 | FR-06 marketplace, cart, orders | `routes/catalog.ts`, `cart.ts`, `orders.ts` |

@@ -4,16 +4,15 @@ import { readOutbox } from '../src/lib/notify.js';
 import { api, auth, createAdmin, login, PASS, registerConsumer, registerFarmer, tokenFor } from './helpers.js';
 
 describe('Authentication (AT-01 … AT-06)', () => {
-  it('AT-01: farmer registers and stays pending until verified', async () => {
+  it('AT-01: farmer registers and can log in immediately', async () => {
     const { res, body } = await registerFarmer();
     expect(res.status).toBe(201);
     const user = await prisma.user.findUniqueOrThrow({ where: { email: body.email as string }, include: { farmerProfile: true } });
-    expect(user.status).toBe('PENDING');
-    expect(user.farmerProfile?.verification).toBe('PENDING');
-    // a pending farmer cannot log in yet
+    expect(user.status).toBe('ACTIVE');
+    expect(user.farmerProfile?.verification).toBe('APPROVED');
     const l = await login(body.email as string);
-    expect(l.status).toBe(403);
-    expect(l.body.error).toMatch(/verification/i);
+    expect(l.status).toBe(200);
+    expect(l.body.user.role).toBe('FARMER');
   });
 
   it('stores password as a hash, never plaintext', async () => {
@@ -128,25 +127,5 @@ describe('Authentication (AT-01 … AT-06)', () => {
 
     expect((await api().post(`/api/admin/users/${user.id}/unblock`).set(auth(admin.token))).status).toBe(200);
     expect((await login(email)).status).toBe(200);
-  });
-
-  it('admin can approve a pending farmer, who can then log in; rejection records the reason', async () => {
-    const admin = await createAdmin();
-    const a = await registerFarmer();
-    const b = await registerFarmer();
-    const ua = await prisma.user.findUniqueOrThrow({ where: { email: a.body.email as string } });
-    const ub = await prisma.user.findUniqueOrThrow({ where: { email: b.body.email as string } });
-
-    const pending = await api().get('/api/admin/farmers/pending').set(auth(admin.token));
-    expect(pending.body.items.map((f: { id: string }) => f.id)).toEqual(expect.arrayContaining([ua.id, ub.id]));
-
-    expect((await api().post(`/api/admin/farmers/${ua.id}/approve`).set(auth(admin.token))).status).toBe(200);
-    expect((await login(a.body.email as string)).status).toBe(200);
-
-    expect((await api().post(`/api/admin/farmers/${ub.id}/reject`).set(auth(admin.token)).send({ reason: '' })).status).toBe(400);
-    expect((await api().post(`/api/admin/farmers/${ub.id}/reject`).set(auth(admin.token)).send({ reason: 'Could not verify farm' })).status).toBe(200);
-    const l = await login(b.body.email as string);
-    expect(l.status).toBe(403);
-    expect(l.body.error).toMatch(/Could not verify farm/);
   });
 });

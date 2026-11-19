@@ -175,7 +175,7 @@ export function UserDirectory({ role, refreshKey = 0, emptyText }: { role: 'FARM
     <div className="stack">
       <div className="filters">
         <Field className="grow" label="Search" type="search" placeholder="Name, email, phone…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
-        <Chips value={status} onChange={(v) => { setStatus(v); setPage(1); }} options={[{ value: '', label: 'All' }, { value: 'ACTIVE', label: 'Active' }, ...(role === 'FARMER' ? [{ value: 'PENDING', label: 'Pending' }, { value: 'REJECTED', label: 'Rejected' }] : []), { value: 'BLOCKED', label: 'Blocked' }]} />
+        <Chips value={status} onChange={(v) => { setStatus(v); setPage(1); }} options={[{ value: '', label: 'All' }, { value: 'ACTIVE', label: 'Active' }, { value: 'BLOCKED', label: 'Blocked' }]} />
       </div>
       <Async loading={L.loading && !L.data} error={L.error} onRetry={L.reload}>
         {L.data && (L.data.items.length === 0 ? <Empty icon="🔍" title="Nobody found">{emptyText}</Empty> : (

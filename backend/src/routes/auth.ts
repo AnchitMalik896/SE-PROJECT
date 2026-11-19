@@ -7,7 +7,7 @@ import { config } from '../config.js';
 import { prisma } from '../db.js';
 import { authenticate, createSession, me, signToken } from '../lib/auth.js';
 import { asyncHandler, HttpError, parse } from '../lib/http.js';
-import { audit, notifyAdmins, sendMessage } from '../lib/notify.js';
+import { audit, sendMessage } from '../lib/notify.js';
 
 export const authRouter = Router();
 
@@ -107,15 +107,16 @@ authRouter.post(
         email: d.email,
         phone: d.phone,
         role: 'FARMER',
-        status: 'PENDING', // FR-01: pending until an administrator verifies
+        status: 'ACTIVE', // farmers can sign up and start selling immediately
         passwordHash: await bcrypt.hash(d.password, 10),
-        farmerProfile: { create: { farmName: d.farmName, farmLocation: d.farmLocation, bio: d.bio } },
+        farmerProfile: {
+          create: { farmName: d.farmName, farmLocation: d.farmLocation, bio: d.bio, verification: 'APPROVED', verifiedAt: new Date() },
+        },
       },
     });
-    await audit(user.id, 'REGISTER', `user:${user.id}`, 'farmer (pending verification)');
-    await notifyAdmins('VERIFICATION', `New farmer "${d.farmName}" is waiting for verification.`);
+    await audit(user.id, 'REGISTER', `user:${user.id}`, 'farmer');
     res.status(201).json({
-      message: 'Registration received. An administrator will verify your account before you can sell.',
+      message: 'Account created. You can log in and start selling.',
       user: publicUser(user),
     });
   }),
@@ -140,10 +141,6 @@ authRouter.post(
     if (!user || !ok) throw new HttpError(401, 'Invalid email/phone or password');
 
     if (user.status === 'BLOCKED') throw new HttpError(403, `Your account has been blocked${user.blockReason ? `: ${user.blockReason}` : ''}`);
-    if (user.status === 'PENDING') throw new HttpError(403, 'Your farmer account is still waiting for administrator verification');
-    if (user.status === 'REJECTED') {
-      throw new HttpError(403, `Your farmer registration was not approved${user.farmerProfile?.rejectionReason ? `: ${user.farmerProfile.rejectionReason}` : ''}`);
-    }
 
     const session = await createSession(user.id);
     const token = signToken(user, session.id);

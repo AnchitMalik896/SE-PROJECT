@@ -15,11 +15,18 @@ async function user(data: { name: string; email: string; phone: string; role: st
 }
 
 async function main() {
+  // Verification was removed: promote farmers created by older versions of the app.
+  await prisma.user.updateMany({ where: { role: 'FARMER', status: { in: ['PENDING', 'REJECTED'] } }, data: { status: 'ACTIVE' } });
+  await prisma.farmerProfile.updateMany({
+    where: { verification: { in: ['PENDING', 'REJECTED'] } },
+    data: { verification: 'APPROVED', verifiedAt: new Date(), rejectionReason: null },
+  });
+
   await user({ name: 'Platform Admin', email: 'admin@farmdirect.test', phone: '9000000001', role: 'ADMIN' });
 
   const farmer1 = await user({ name: 'Harpreet Singh', email: 'harpreet@farmdirect.test', phone: '9000000011', role: 'FARMER' });
   const farmer2 = await user({ name: 'Meena Devi', email: 'meena@farmdirect.test', phone: '9000000012', role: 'FARMER' });
-  const pending = await user({ name: 'Ravi Kumar', email: 'ravi@farmdirect.test', phone: '9000000013', role: 'FARMER', status: 'PENDING' });
+  const farmer3 = await user({ name: 'Ravi Kumar', email: 'ravi@farmdirect.test', phone: '9000000013', role: 'FARMER' });
   await prisma.farmerProfile.upsert({
     where: { userId: farmer1.id },
     update: {},
@@ -31,9 +38,9 @@ async function main() {
     create: { userId: farmer2.id, farmName: 'Meena Organic Orchard', farmLocation: 'Nabha Road, Patiala, Punjab', bio: 'Chemical-free fruit and honey.', verification: 'APPROVED', verifiedAt: new Date() },
   });
   await prisma.farmerProfile.upsert({
-    where: { userId: pending.id },
+    where: { userId: farmer3.id },
     update: {},
-    create: { userId: pending.id, farmName: 'Kumar Greens', farmLocation: 'Samana, Patiala, Punjab', verification: 'PENDING' },
+    create: { userId: farmer3.id, farmName: 'Kumar Greens', farmLocation: 'Samana, Patiala, Punjab', verification: 'APPROVED', verifiedAt: new Date() },
   });
 
   await user({ name: 'Asha Verma', email: 'asha@farmdirect.test', phone: '9000000021', role: 'CONSUMER', address: '12, Model Town, Patiala, Punjab 147001' });
@@ -61,8 +68,7 @@ async function main() {
 
   console.log('\nSeeded. Demo logins (password for all: ' + DEMO_PASSWORD + '):');
   console.log('  admin     admin@farmdirect.test');
-  console.log('  farmer    harpreet@farmdirect.test  /  meena@farmdirect.test');
-  console.log('  pending   ravi@farmdirect.test  (approve him from the admin dashboard)');
+  console.log('  farmer    harpreet@farmdirect.test  /  meena@farmdirect.test  /  ravi@farmdirect.test');
   console.log('  consumer  asha@farmdirect.test');
   console.log('  delivery  dev@farmdirect.test  /  sunil@farmdirect.test\n');
 }

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 import { guard, me } from '../lib/auth.js';
 import { asyncHandler, dateRange, HttpError, pageParams, parse } from '../lib/http.js';
-import { audit, notify, sendMessage } from '../lib/notify.js';
+import { audit, notify } from '../lib/notify.js';
 import { getDeliveryFee, setDeliveryFee } from '../lib/settings.js';
 import { cancelOrder, short } from '../services/orders.js';
 import { emailField, nameField, password, phoneField, publicUser } from './auth.js';
@@ -122,58 +122,8 @@ adminRouter.post(
     const target = await prisma.user.findUnique({ where: { id }, include: userInclude });
     if (!target) throw new HttpError(404, 'User not found');
     if (target.status !== 'BLOCKED') throw new HttpError(409, 'This account is not blocked');
-    const status = target.role === 'FARMER' && target.farmerProfile?.verification !== 'APPROVED' ? 'PENDING' : 'ACTIVE';
-    await prisma.user.update({ where: { id }, data: { status, blockReason: null } });
+    await prisma.user.update({ where: { id }, data: { status: 'ACTIVE', blockReason: null } });
     await audit(a.id, 'USER_UNBLOCKED', `user:${id}`);
-    res.json({ user: shapeUser(await prisma.user.findUniqueOrThrow({ where: { id }, include: userInclude })) });
-  }),
-);
-
-// =====================================================================
-// Farmer verification (US-34)
-// =====================================================================
-adminRouter.get(
-  '/farmers/pending',
-  asyncHandler(async (_req, res) => {
-    const rows = await prisma.user.findMany({ where: { role: 'FARMER', status: 'PENDING' }, include: userInclude, orderBy: { createdAt: 'asc' } });
-    res.json({ items: rows.map(shapeUser) });
-  }),
-);
-
-adminRouter.post(
-  '/farmers/:id/approve',
-  asyncHandler(async (req, res) => {
-    const a = me(req);
-    const id = String(req.params.id);
-    const f = await prisma.user.findFirst({ where: { id, role: 'FARMER' }, include: userInclude });
-    if (!f) throw new HttpError(404, 'Farmer not found');
-    if (f.status === 'BLOCKED') throw new HttpError(409, 'Unblock this account first');
-    await prisma.$transaction([
-      prisma.user.update({ where: { id }, data: { status: 'ACTIVE' } }),
-      prisma.farmerProfile.update({ where: { userId: id }, data: { verification: 'APPROVED', rejectionReason: null, verifiedAt: new Date() } }),
-    ]);
-    sendMessage({ to: f.email, channel: 'email', subject: 'Your farmer account is approved', body: 'You can now log in and list your produce.' });
-    await notify(id, 'VERIFICATION', 'Your farmer account has been approved. You can start selling!');
-    await audit(a.id, 'FARMER_APPROVED', `user:${id}`);
-    res.json({ user: shapeUser(await prisma.user.findUniqueOrThrow({ where: { id }, include: userInclude })) });
-  }),
-);
-
-adminRouter.post(
-  '/farmers/:id/reject',
-  asyncHandler(async (req, res) => {
-    const a = me(req);
-    const d = parse(z.object({ reason: z.string().trim().min(3, 'Give the farmer a reason').max(300) }), req.body);
-    const id = String(req.params.id);
-    const f = await prisma.user.findFirst({ where: { id, role: 'FARMER' } });
-    if (!f) throw new HttpError(404, 'Farmer not found');
-    await prisma.$transaction([
-      prisma.user.update({ where: { id }, data: { status: 'REJECTED' } }),
-      prisma.farmerProfile.update({ where: { userId: id }, data: { verification: 'REJECTED', rejectionReason: d.reason } }),
-      prisma.session.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } }),
-    ]);
-    sendMessage({ to: f.email, channel: 'email', subject: 'Your farmer registration was not approved', body: `Reason: ${d.reason}` });
-    await audit(a.id, 'FARMER_REJECTED', `user:${id}`, d.reason);
     res.json({ user: shapeUser(await prisma.user.findUniqueOrThrow({ where: { id }, include: userInclude })) });
   }),
 );

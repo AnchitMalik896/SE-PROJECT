@@ -49,12 +49,10 @@ export async function createCourier() {
   return { email, token: await tokenFor(email) };
 }
 
-/** a verified farmer with a login token */
-export async function createApprovedFarmer(adminToken: string) {
+/** a farmer with a login token (signup is active immediately) */
+export async function createApprovedFarmer() {
   const { body } = await registerFarmer();
   const user = await prisma.user.findUniqueOrThrow({ where: { email: body.email as string } });
-  const r = await api().post(`/api/admin/farmers/${user.id}/approve`).set(auth(adminToken));
-  if (r.status !== 200) throw new Error('approve failed');
   return { id: user.id, email: body.email as string, token: await tokenFor(body.email as string) };
 }
 

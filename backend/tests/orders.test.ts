@@ -13,7 +13,7 @@ const stockOf = async (id: string) => (await prisma.product.findUniqueOrThrow({ 
 
 describe('Marketplace & checkout', () => {
   it('only shows verified, in-stock, active products; supports search + price filters', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const tomato = await createProduct(farmer.token, { name: 'ZzUniqueTomato', price: 3000, stock: 5 });
     const empty = await createProduct(farmer.token, { name: 'ZzUniqueEmpty', stock: 0 });
 
@@ -31,14 +31,14 @@ describe('Marketplace & checkout', () => {
   });
 
   it('validates product input', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const r = await api().post('/api/farmer/products').set(auth(farmer.token)).send({ name: 'X', price: 5, unit: '', stock: -1 });
     expect(r.status).toBe(400);
     expect(Object.keys(r.body.fields)).toEqual(expect.arrayContaining(['name', 'price', 'unit', 'stock']));
   });
 
   it('cart cannot exceed available stock', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token, { stock: 3 });
     expect((await api().post('/api/cart').set(auth(consumer.token)).send({ productId: p.id, quantity: 3 })).status).toBe(201);
@@ -50,8 +50,8 @@ describe('Marketplace & checkout', () => {
   });
 
   it('checkout reduces stock, splits orders per farmer and keeps one payment', async () => {
-    const f1 = await createApprovedFarmer(admin.token);
-    const f2 = await createApprovedFarmer(admin.token);
+    const f1 = await createApprovedFarmer();
+    const f2 = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p1 = await createProduct(f1.token, { stock: 10, price: 5000 });
     const p2 = await createProduct(f2.token, { stock: 10, price: 3000 });
@@ -69,7 +69,7 @@ describe('Marketplace & checkout', () => {
   });
 
   it('never oversells: concurrent checkouts for the last unit — exactly one wins', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const p = await createProduct(farmer.token, { stock: 1 });
     const [c1, c2] = [await createConsumer(), await createConsumer()];
     await api().post('/api/cart').set(auth(c1.token)).send({ productId: p.id, quantity: 1 });
@@ -80,7 +80,7 @@ describe('Marketplace & checkout', () => {
   });
 
   it('retrying checkout with the same idempotency key does not create a duplicate order', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token, { stock: 10 });
     const key = 'idem-key-12345678';
@@ -102,7 +102,7 @@ describe('Marketplace & checkout', () => {
 
 describe('Payments (AT-07, idempotency, signatures)', () => {
   it('AT-07: a failed payment is never treated as success; retry then succeeds', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token);
     const { body } = await placeOrder(consumer.token, p.id);
@@ -124,7 +124,7 @@ describe('Payments (AT-07, idempotency, signatures)', () => {
   });
 
   it('timeout is a failure too, and a paid payment cannot be retried', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token);
     const { body } = await placeOrder(consumer.token, p.id);
@@ -135,7 +135,7 @@ describe('Payments (AT-07, idempotency, signatures)', () => {
   });
 
   it('duplicate callbacks are idempotent: processed once, notifications sent once', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token);
     const { body } = await placeOrder(consumer.token, p.id);
@@ -146,7 +146,7 @@ describe('Payments (AT-07, idempotency, signatures)', () => {
   });
 
   it('a late success after a failure does not flip a failed payment', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token);
     const { body } = await placeOrder(consumer.token, p.id);
@@ -161,7 +161,7 @@ describe('Payments (AT-07, idempotency, signatures)', () => {
   });
 
   it('webhook rejects bad signatures, wrong amounts and unknown payments', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token);
     const { body } = await placeOrder(consumer.token, p.id);
@@ -179,7 +179,7 @@ describe('Payments (AT-07, idempotency, signatures)', () => {
   });
 
   it('unpaid orders expire and release their stock', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token, { stock: 5 });
     const { body } = await placeOrder(consumer.token, p.id, 2);
@@ -193,7 +193,7 @@ describe('Payments (AT-07, idempotency, signatures)', () => {
 
 describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
   async function paidOrder(qty = 2) {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token, { stock: 10, price: 5000 });
     const { body } = await placeOrder(consumer.token, p.id, qty);
@@ -234,7 +234,7 @@ describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
   });
 
   it('cancelling an unpaid order restores stock without a refund', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token, { stock: 4 });
     const { body } = await placeOrder(consumer.token, p.id, 2);
@@ -355,14 +355,14 @@ describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
     const stranger = await createConsumer();
     expect((await api().get(`/api/orders/${orderId}`).set(auth(stranger.token))).status).toBe(404);
     expect((await api().post(`/api/orders/${orderId}/cancel`).set(auth(stranger.token)).send({})).status).toBe(404);
-    const otherFarmer = await createApprovedFarmer(admin.token);
+    const otherFarmer = await createApprovedFarmer();
     expect((await api().patch(`/api/farmer/orders/${orderId}/status`).set(auth(otherFarmer.token)).send({ status: 'ACCEPTED' })).status).toBe(404);
   });
 });
 
 describe('Admin', () => {
   it('analytics, logs, payments and complaints work end to end', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token);
     const { body } = await placeOrder(consumer.token, p.id);
@@ -400,7 +400,7 @@ describe('Admin', () => {
   });
 
   it('taken-down products disappear from search and carts', async () => {
-    const farmer = await createApprovedFarmer(admin.token);
+    const farmer = await createApprovedFarmer();
     const consumer = await createConsumer();
     const p = await createProduct(farmer.token, { name: 'ZzTakedown' });
     await api().post('/api/cart').set(auth(consumer.token)).send({ productId: p.id, quantity: 1 });
