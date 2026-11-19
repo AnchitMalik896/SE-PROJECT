@@ -1,0 +1,6 @@
+.d-card { display: flex; flex-direction: column; gap: 0.7rem; }
+.d-route { display: grid; gap: 0.2rem; }
+.d-route .pin { font-weight: 700; }
+.otp-input { font-family: ui-monospace, monospace; font-size: 1.6rem; letter-spacing: 0.4em; text-align: center; max-width: 11rem; }
+.done-state { text-align: center; padding: 1.5rem; }
+.done-state .big { font-size: 3rem; }

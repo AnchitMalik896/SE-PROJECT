@@ -1,0 +1,309 @@
+// Dev uses SQLite for zero-setup. To move to PostgreSQL (as suggested in the report):
+//   1. change `provider` to "postgresql" and DATABASE_URL to a postgres URL
+//   2. run `npm run db:push`
+// Enum-like columns are plain strings validated in code, so the schema is portable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String   @unique
+  passwordHash String
+  role         String // CONSUMER | FARMER | DELIVERY | ADMIN
+  status       String   @default("ACTIVE") // ACTIVE | PENDING | REJECTED | BLOCKED
+  address      String?
+  blockReason  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  farmerProfile FarmerProfile?
+  products      Product[]
+  cartItems     CartItem[]
+  sessions      Session[]
+  notifications Notification[]
+  consumerOrders Order[]       @relation("ConsumerOrders")
+  farmerOrders   Order[]       @relation("FarmerOrders")
+  deliveries     Delivery[]
+  ratings        Rating[]      @relation("RatingConsumer")
+  farmerRatings  Rating[]      @relation("RatingFarmer")
+  complaintsFiled    Complaint[] @relation("ComplaintFiledBy")
+  complaintsAgainst  Complaint[] @relation("ComplaintAgainst")
+  resets         PasswordReset[]
+  earnings       Transaction[]
+  auditLogs      AuditLog[]
+}
+
+model FarmerProfile {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farmName        String
+  farmLocation    String
+  bio             String?
+  verification    String  @default("PENDING") // PENDING | APPROVED | REJECTED
+  rejectionReason String?
+  verifiedAt      DateTime?
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now())
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  farmerId    String
+  farmer      User      @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  name        String
+  description String    @default("")
+  price       Int // minor units (paise) per `unit`
+  unit        String // kg, dozen, bunch, ...
+  stock       Int       @default(0)
+  photoUrl    String?
+  active      Boolean   @default(true) // farmer removed => false
+  takenDownReason String? // set by admin
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  ratings    Rating[]
+
+  @@index([farmerId])
+  @@index([categoryId])
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+
+  @@unique([userId, productId])
+}
+
+// One Order per farmer. Orders created by one checkout share a groupId and a single Payment.
+model Order {
+  id              String   @id @default(cuid())
+  groupId         String
+  consumerId      String
+  consumer        User     @relation("ConsumerOrders", fields: [consumerId], references: [id])
+  farmerId        String
+  farmer          User     @relation("FarmerOrders", fields: [farmerId], references: [id])
+  status          String   @default("PLACED") // PLACED | ACCEPTED | PACKED | DISPATCHED | DELIVERED | CANCELLED
+  paymentStatus   String   @default("PENDING") // PENDING | PAID | FAILED | REFUNDED
+  payoutStatus    String   @default("HELD") // HELD | RELEASED | REFUNDED
+  subtotal        Int
+  deliveryFee     Int
+  total           Int
+  deliveryAddress String
+  deliveryOtp     String? // generated when dispatched, shown to consumer only
+  cancelReason    String?
+  idempotencyKey  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items    OrderItem[]
+  delivery Delivery?
+  refunds  Refund[]
+  ratings  Rating[]
+  txns     Transaction[]
+  complaints Complaint[]
+
+  @@unique([consumerId, idempotencyKey])
+  @@index([groupId])
+  @@index([farmerId])
+  @@index([consumerId])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  unit      String
+  unitPrice Int
+  quantity  Int
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  groupId     String   @unique
+  consumerId  String
+  amount      Int
+  status      String   @default("PENDING") // PENDING | SUCCESS | FAILED
+  gatewayRef  String   @unique
+  failureReason String?
+  attempts    Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events  PaymentEvent[]
+  refunds Refund[]
+}
+
+// Every webhook event id is stored once => duplicate callbacks are no-ops (idempotency).
+model PaymentEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  status    String
+  applied   Boolean
+  createdAt DateTime @default(now())
+}
+
+model Refund {
+  id        String   @id @default(cuid())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id])
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+}
+
+// Farmer payout ledger. EARNING rows are created when delivery is confirmed.
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  type      String // EARNING
+  amount    Int
+  createdAt DateTime @default(now())
+}
+
+model Delivery {
+  id               String    @id @default(cuid())
+  orderId          String    @unique
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  deliveryPersonId String?
+  deliveryPerson   User?     @relation(fields: [deliveryPersonId], references: [id])
+  status           String    @default("UNASSIGNED") // UNASSIGNED | ASSIGNED | PICKED_UP | ON_THE_WAY | DELIVERED | FAILED
+  pickupAddress    String
+  dropAddress      String
+  pickupPhone      String?
+  dropPhone        String?
+  lat              Float?
+  lng              Float?
+  locationUpdatedAt DateTime?
+  completedAt      DateTime?
+  failureReason    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  declines DeliveryDecline[]
+
+  @@index([deliveryPersonId])
+}
+
+model DeliveryDecline {
+  id         String   @id @default(cuid())
+  deliveryId String
+  delivery   Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  userId     String
+
+  @@unique([deliveryId, userId])
+}
+
+model Rating {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  consumerId String
+  consumer   User     @relation("RatingConsumer", fields: [consumerId], references: [id])
+  farmerId   String
+  farmer     User     @relation("RatingFarmer", fields: [farmerId], references: [id])
+  stars      Int
+  comment    String?
+  hidden     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([orderId, productId, consumerId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model Complaint {
+  id              String   @id @default(cuid())
+  filedById       String
+  filedBy         User     @relation("ComplaintFiledBy", fields: [filedById], references: [id])
+  againstId       String?
+  against         User?    @relation("ComplaintAgainst", fields: [againstId], references: [id])
+  orderId         String?
+  order           Order?   @relation(fields: [orderId], references: [id])
+  subject         String
+  description     String
+  status          String   @default("OPEN") // OPEN | RESOLVED
+  resolutionNotes String?
+  resolvedAt      DateTime?
+  createdAt       DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model Setting {
+  key   String @id
+  value String
+}

@@ -1,0 +1,14 @@
+import { execSync } from 'node:child_process';
+import { rmSync } from 'node:fs';
+import path from 'node:path';
+
+// Fresh SQLite database for every test run.
+export default function setup() {
+  const prismaDir = path.resolve(import.meta.dirname, '../prisma');
+  for (const f of ['test.db', 'test.db-journal']) rmSync(path.join(prismaDir, f), { force: true });
+  execSync('npx prisma db push --skip-generate', {
+    cwd: path.resolve(import.meta.dirname, '..'),
+    env: { ...process.env, DATABASE_URL: 'file:./test.db', PRISMA_HIDE_UPDATE_MESSAGE: '1' },
+    stdio: 'pipe',
+  });
+}

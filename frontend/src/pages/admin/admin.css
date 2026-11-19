@@ -1,0 +1,22 @@
+/* Admin area extras — built on the global glass tokens */
+.filters { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-bottom: 1rem; }
+.filters .field { min-width: 150px; flex: 1 1 150px; max-width: 260px; }
+.filters .grow { flex: 2 1 220px; max-width: 360px; }
+.attn { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; text-decoration: none; color: var(--text); padding: 0.8rem 1rem; border-radius: var(--radius-sm); background: var(--glass-soft); border: 1px solid var(--glass-edge); }
+.attn:hover { background: var(--glass); }
+.attn .n { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; }
+.attn.hot .n { color: var(--warn); }
+.bar-row { display: grid; grid-template-columns: 110px 1fr 40px; gap: 0.6rem; align-items: center; font-size: 0.9rem; margin: 0.35rem 0; }
+.bar-track { height: 10px; border-radius: 999px; background: var(--glass-edge); overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--text-muted); font-size: 11px; }
+.chart .bar { fill: var(--accent); }
+.chart .line { fill: none; stroke: var(--info); stroke-width: 2.5; stroke-linejoin: round; }
+.chart .dot { fill: var(--info); }
+.legend { display: flex; gap: 1rem; font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 0.35rem; vertical-align: middle; }
+.cell-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.detail-box { padding: 0.8rem 1rem; border-radius: var(--radius-sm); background: var(--glass-soft); border: 1px solid var(--glass-edge); }
+.wrap-text { white-space: normal; word-break: break-word; max-width: 360px; }
+.flags { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.3rem; }

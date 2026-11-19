@@ -1,0 +1,17 @@
+{
+  "name": "farm-direct",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Farmer–Consumer Direct Platform",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "test": "npm test -w backend",
+    "db:push": "npm run db:push -w backend",
+    "db:push:pg": "npm run db:push:pg -w backend",
+    "db:seed": "npm run db:seed -w backend",
+    "setup": "npm install && npm run db:push && npm run db:seed"
+  },
+  "devDependencies": { "concurrently": "^9.1.0" }
+}
