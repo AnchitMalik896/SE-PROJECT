@@ -20,12 +20,11 @@ describe('Marketplace & checkout', () => {
     const found = await api().get('/api/products').query({ search: 'ZzUnique' });
     const ids = found.body.items.map((p: { id: string }) => p.id);
     expect(ids).toContain(tomato.id);
-    expect(ids).not.toContain(empty.id); // out-of-stock hidden from search
+    expect(ids).not.toContain(empty.id); 
 
     const cheap = await api().get('/api/products').query({ search: 'ZzUnique', maxPrice: 2000 });
     expect(cheap.body.items).toHaveLength(0);
 
-    // removed products leave search
     await api().delete(`/api/farmer/products/${tomato.id}`).set(auth(farmer.token));
     expect((await api().get('/api/products').query({ search: 'ZzUnique' })).body.items).toHaveLength(0);
   });
@@ -64,7 +63,6 @@ describe('Marketplace & checkout', () => {
     expect(res.body.payment.amount).toBe(2 * 5000 + 3000 + 2 * fee);
     expect(await stockOf(p1.id)).toBe(8);
     expect(await stockOf(p2.id)).toBe(9);
-    // cart emptied
     expect((await api().get('/api/cart').set(auth(consumer.token))).body.items).toHaveLength(0);
   });
 
@@ -90,7 +88,7 @@ describe('Marketplace & checkout', () => {
     expect(second.status).toBe(200);
     expect(second.body.replayed).toBe(true);
     expect(second.body.groupId).toBe(first.body.groupId);
-    expect(await stockOf(p.id)).toBe(8); // decremented once
+    expect(await stockOf(p.id)).toBe(8); 
     expect(await prisma.order.count({ where: { groupId: first.body.groupId } })).toBe(1);
   });
 
@@ -111,7 +109,6 @@ describe('Payments (AT-07, idempotency, signatures)', () => {
     expect(failed.body.status).toBe('FAILED');
     let order = await prisma.order.findFirstOrThrow({ where: { groupId: body.groupId } });
     expect(order.paymentStatus).toBe('FAILED');
-    // the farmer must not see an unpaid order, and cannot act on it
     expect((await api().get('/api/farmer/orders').set(auth(farmer.token))).body.items).toHaveLength(0);
     expect((await api().patch(`/api/farmer/orders/${order.id}/status`).set(auth(farmer.token)).send({ status: 'ACCEPTED' })).status).toBe(409);
 
@@ -170,7 +167,7 @@ describe('Payments (AT-07, idempotency, signatures)', () => {
 
     const good = JSON.stringify({ eventId: 'evt_bad_sig_1', gatewayRef: payment.gatewayRef, status: 'SUCCESS', amount: payment.amount });
     expect((await send(good, 'deadbeef')).status).toBe(401);
-    expect((await send(good, signPayload(good + ' '))).status).toBe(401); // signature over different bytes
+    expect((await send(good, signPayload(good + ' '))).status).toBe(401); 
     const wrongAmount = JSON.stringify({ eventId: 'evt_wrong_amt_1', gatewayRef: payment.gatewayRef, status: 'SUCCESS', amount: 1 });
     expect((await send(wrongAmount, signPayload(wrongAmount))).status).toBe(400);
     const unknown = JSON.stringify({ eventId: 'evt_unknown_001', gatewayRef: 'nope', status: 'SUCCESS', amount: 1 });
@@ -204,11 +201,11 @@ describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
 
   it('enforces the state machine: no skipping steps', async () => {
     const { farmer, orderId } = await paidOrder();
-    expect((await setStatus(farmer.token, orderId, 'PACKED')).status).toBe(409); // must accept first
+    expect((await setStatus(farmer.token, orderId, 'PACKED')).status).toBe(409); 
     expect((await setStatus(farmer.token, orderId, 'ACCEPTED')).status).toBe(200);
-    expect((await setStatus(farmer.token, orderId, 'ACCEPTED')).status).toBe(409); // no repeats
+    expect((await setStatus(farmer.token, orderId, 'ACCEPTED')).status).toBe(409); 
     expect((await setStatus(farmer.token, orderId, 'PACKED')).status).toBe(200);
-    expect((await setStatus(farmer.token, orderId, 'ACCEPTED')).status).toBe(409); // no going back
+    expect((await setStatus(farmer.token, orderId, 'ACCEPTED')).status).toBe(409); 
   });
 
   it('cancel before packing: full refund and stock restored; after packing: refused', async () => {
@@ -221,7 +218,7 @@ describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
     const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
     expect(refund.amount).toBe(order.total);
     expect(order.paymentStatus).toBe('REFUNDED');
-    expect((await api().post(`/api/orders/${orderId}/cancel`).set(auth(consumer.token)).send({})).status).toBe(409); // no double refund
+    expect((await api().post(`/api/orders/${orderId}/cancel`).set(auth(consumer.token)).send({})).status).toBe(409); 
     expect(await prisma.refund.count({ where: { orderId } })).toBe(1);
 
     const second = await paidOrder();
@@ -251,20 +248,17 @@ describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
     await setStatus(farmer.token, orderId, 'ACCEPTED');
     await setStatus(farmer.token, orderId, 'PACKED');
 
-    // available pool hides the drop address until accepted (privacy)
     const pool = await api().get('/api/delivery/available').set(auth(courier.token));
     const mine = pool.body.items.find((d: { orderId: string }) => d.orderId === orderId);
     expect(mine).toBeTruthy();
     expect(mine.dropAddress).toBeNull();
     expect(mine.dropPhone).toBeNull();
 
-    // a declined delivery disappears for that courier only
     const declined = await api().post(`/api/delivery/${mine.id}/decline`).set(auth(other.token));
     expect(declined.status).toBe(200);
     expect((await api().get('/api/delivery/available').set(auth(other.token))).body.items.find((d: { id: string }) => d.id === mine.id)).toBeUndefined();
     expect((await api().get('/api/delivery/available').set(auth(courier.token))).body.items.find((d: { id: string }) => d.id === mine.id)).toBeTruthy();
 
-    // only one courier can claim it
     const [a, b] = await Promise.all([courier, other].map((c) => api().post(`/api/delivery/${mine.id}/accept`).set(auth(c.token))));
     expect([a.status, b.status].sort()).toEqual([200, 409]);
     const winner = a.status === 200 ? courier : other;
@@ -273,7 +267,6 @@ describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
     const detail = await api().get(`/api/delivery/${mine.id}`).set(auth(winner.token));
     expect(detail.body.delivery.dropAddress).toContain('Test Street');
 
-    // location sharing only works while delivering
     expect((await api().post(`/api/delivery/${mine.id}/location`).set(auth(winner.token)).send({ lat: 30.3, lng: 76.4 })).status).toBe(409);
     expect((await api().post(`/api/delivery/${mine.id}/status`).set(auth(winner.token)).send({ status: 'ON_THE_WAY' })).status).toBe(409); // must pick up first
     expect((await api().post(`/api/delivery/${mine.id}/status`).set(auth(winner.token)).send({ status: 'PICKED_UP' })).status).toBe(200);
@@ -281,38 +274,31 @@ describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
     expect((await api().post(`/api/delivery/${mine.id}/location`).set(auth(winner.token)).send({ lat: 999, lng: 0 })).status).toBe(400);
     expect((await api().post(`/api/delivery/${mine.id}/status`).set(auth(winner.token)).send({ status: 'ON_THE_WAY' })).status).toBe(200);
 
-    // consumer sees OTP + live location only now; farmer never sees the OTP
     const view = await api().get(`/api/orders/${orderId}`).set(auth(consumer.token));
     expect(view.body.order.status).toBe('DISPATCHED');
     expect(view.body.order.deliveryOtp).toMatch(/^\d{4}$/);
     expect(view.body.order.delivery.location).toMatchObject({ lat: 30.3, lng: 76.4 });
     expect((await api().get(`/api/orders/${orderId}`).set(auth(farmer.token))).body.order.deliveryOtp).toBeUndefined();
 
-    // can't cancel once out for delivery
     expect((await api().post(`/api/orders/${orderId}/cancel`).set(auth(consumer.token)).send({})).status).toBe(409);
 
-    // wrong OTP rejected; right OTP completes
     const wrong = view.body.order.deliveryOtp === '0000' ? '1111' : '0000';
     expect((await api().post(`/api/delivery/${mine.id}/confirm`).set(auth(winner.token)).send({ otp: wrong })).status).toBe(400);
     const done = await api().post(`/api/delivery/${mine.id}/confirm`).set(auth(winner.token)).send({ otp: view.body.order.deliveryOtp });
     expect(done.status).toBe(200);
     expect(done.body.delivery.status).toBe('DELIVERED');
-    // confirming twice is refused
     expect((await api().post(`/api/delivery/${mine.id}/confirm`).set(auth(winner.token)).send({ otp: view.body.order.deliveryOtp })).status).toBe(409);
 
-    // AT-08: status visible to the relevant users; location cleared after delivery
     const after = await api().get(`/api/orders/${orderId}`).set(auth(consumer.token));
     expect(after.body.order.status).toBe('DELIVERED');
     expect(after.body.order.delivery.location).toBeNull();
     const row = await prisma.delivery.findUniqueOrThrow({ where: { id: mine.id } });
     expect(row.lat).toBeNull();
 
-    // payout released exactly once, excluding the delivery fee
     const earnings = await api().get('/api/farmer/earnings').set(auth(farmer.token));
     expect(earnings.body.total).toBe(2 * 5000);
     expect(earnings.body.items).toHaveLength(1);
 
-    // rating: only after delivery, once per product
     const rate = () => api().post(`/api/orders/${orderId}/rate`).set(auth(consumer.token)).send({ productId: p.id, stars: 5, comment: 'Great' });
     expect((await rate()).status).toBe(201);
     expect((await rate()).status).toBe(409);
@@ -345,7 +331,6 @@ describe('Order lifecycle, cancellation and delivery (AT-08)', () => {
     expect(r.status).toBe(200);
     expect(r.body.refunded).toBeGreaterThan(0);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: orderId } })).paymentStatus).toBe('REFUNDED');
-    // no payout for a refunded order
     expect((await api().get('/api/farmer/earnings').set(auth(farmer.token))).body.total).toBe(0);
     void consumer;
   });
@@ -383,7 +368,6 @@ describe('Admin', () => {
     expect(c.status).toBe(201);
     const res = await api().post(`/api/admin/complaints/${c.body.complaint.id}/resolve`).set(auth(admin.token)).send({ notes: 'Apologised and credited.' });
     expect(res.status).toBe(200);
-    // both parties are told
     expect(await prisma.notification.count({ where: { userId: farmer.id, type: 'COMPLAINT' } })).toBe(1);
     expect(await prisma.notification.count({ where: { userId: consumer.id, type: 'COMPLAINT' } })).toBeGreaterThanOrEqual(1);
   });

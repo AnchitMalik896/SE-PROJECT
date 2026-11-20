@@ -41,7 +41,6 @@ const routes: RouteObject[] = [
   shell(['FARMER'], farmerRoutes),
   shell(['DELIVERY'], deliveryRoutes),
   shell(['ADMIN'], adminRoutes),
-  // pages every signed-in role can open
   shell(['CONSUMER', 'FARMER', 'DELIVERY', 'ADMIN'], [
     { path: '/notifications', element: <NotificationsPage /> },
     { path: '/profile', element: <ProfilePage /> },

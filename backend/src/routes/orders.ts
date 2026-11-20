@@ -21,7 +21,6 @@ export const orderInclude = {
 
 type OrderFull = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
-/** Shapes an order for the viewer. Contact details, OTP and live location are role-gated (privacy NFR). */
 export function shapeOrder(o: OrderFull, viewer: Pick<AuthUser, 'id' | 'role'>) {
   const isConsumer = viewer.role === 'CONSUMER';
   const isAdmin = viewer.role === 'ADMIN';
@@ -37,7 +36,6 @@ export function shapeOrder(o: OrderFull, viewer: Pick<AuthUser, 'id' | 'role'>) 
     subtotal: o.subtotal,
     deliveryFee: o.deliveryFee,
     total: o.total,
-    // farmers don't need the customer's address; the assigned delivery partner gets it via /delivery
     deliveryAddress: viewer.role === 'FARMER' ? null : o.deliveryAddress,
     cancelReason: o.cancelReason,
     createdAt: o.createdAt,
@@ -50,7 +48,6 @@ export function shapeOrder(o: OrderFull, viewer: Pick<AuthUser, 'id' | 'role'>) 
       farmLocation: o.farmer.farmerProfile?.farmLocation ?? '',
     },
     consumer: isConsumer ? undefined : { id: o.consumer.id, name: o.consumer.name },
-    // the OTP is for the consumer only, and only once the order is out for delivery
     deliveryOtp: isConsumer && o.status === 'DISPATCHED' ? o.deliveryOtp : undefined,
     refunded: o.refunds.reduce((s, r) => s + r.amount, 0),
     ratedProductIds: o.ratings.map((r) => r.productId),
@@ -63,7 +60,6 @@ export function shapeOrder(o: OrderFull, viewer: Pick<AuthUser, 'id' | 'role'>) 
           updatedAt: d.updatedAt,
           completedAt: d.completedAt,
           failureReason: isConsumer ? undefined : d.failureReason,
-          // live location: only the buyer (and admin) see it, only while out for delivery
           location: (isConsumer || isAdmin) && outForDelivery && d.lat != null && d.lng != null ? { lat: d.lat, lng: d.lng, updatedAt: d.locationUpdatedAt } : null,
         }
       : null,
@@ -76,9 +72,6 @@ async function loadOrder(id: string) {
   return o;
 }
 
-// =====================================================================
-// Consumer
-// =====================================================================
 export const ordersRouter = Router();
 
 const checkoutBody = z.object({
@@ -96,7 +89,6 @@ async function replayCheckout(consumerId: string, key: string) {
   return { groupId: orders[0].groupId, orders: orders.map((o) => shapeOrder(o, { id: consumerId, role: 'CONSUMER' })), payment, replayed: true };
 }
 
-// US-17: place order. Stock is validated & decremented atomically; retries with the same key never duplicate.
 ordersRouter.post(
   '/checkout',
   guard('CONSUMER'),
@@ -121,7 +113,6 @@ ordersRouter.post(
         for (const c of cart) {
           const p = c.product;
           if (!p.active || p.takenDownReason || p.farmer.status !== 'ACTIVE') throw new HttpError(409, `"${p.name}" is no longer available. Remove it from your cart.`);
-          // atomic: decrement only if enough stock remains
           const upd = await tx.product.updateMany({ where: { id: p.id, stock: { gte: c.quantity } }, data: { stock: { decrement: c.quantity } } });
           if (upd.count !== 1) throw new HttpError(409, `Not enough stock for "${p.name}". Please reduce the quantity.`);
         }
@@ -162,7 +153,6 @@ ordersRouter.post(
       });
       res.status(201).json({ groupId: created.groupId, orders: created.orders.map((o) => shapeOrder(o, user)), payment: created.payment });
     } catch (e) {
-      // two concurrent requests with the same key: the loser replays the winner's result
       if (key && e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         const replay = await replayCheckout(user.id, key);
         if (replay) return res.json(replay);
@@ -172,7 +162,6 @@ ordersRouter.post(
   }),
 );
 
-// US-19 / US-20: history + tracking
 ordersRouter.get(
   '/',
   guard('CONSUMER'),
@@ -200,7 +189,6 @@ ordersRouter.get(
   }),
 );
 
-// US-22: cancel only before packing
 ordersRouter.post(
   '/:id/cancel',
   guard('CONSUMER'),
@@ -214,7 +202,6 @@ ordersRouter.post(
   }),
 );
 
-// US-21: rate only delivered orders, once per product per order
 ordersRouter.post(
   '/:id/rate',
   guard('CONSUMER'),
@@ -240,13 +227,9 @@ ordersRouter.post(
   }),
 );
 
-// =====================================================================
-// Farmer
-// =====================================================================
 export const farmerOrdersRouter = Router();
 farmerOrdersRouter.use(guard('FARMER'));
 
-// US-09: only paid orders reach the farmer; filterable by status
 farmerOrdersRouter.get(
   '/',
   asyncHandler(async (req, res) => {
@@ -261,7 +244,6 @@ farmerOrdersRouter.get(
   }),
 );
 
-// US-10: accepted -> packed (or cancel before packing); every change notifies the consumer
 farmerOrdersRouter.patch(
   '/:id/status',
   asyncHandler(async (req, res) => {
@@ -279,7 +261,6 @@ farmerOrdersRouter.patch(
     assertTransition(o.status, d.status);
 
     await prisma.$transaction(async (tx) => {
-      // compare-and-set so two quick clicks can't apply the same transition twice
       const upd = await tx.order.updateMany({ where: { id: o.id, status: o.status }, data: { status: d.status } });
       if (upd.count !== 1) throw new HttpError(409, 'This order was just updated. Refresh and try again.');
       if (d.status === 'PACKED') {
@@ -306,13 +287,9 @@ farmerOrdersRouter.patch(
   }),
 );
 
-// =====================================================================
-// Farmer earnings + dashboard (mounted at /farmer)
-// =====================================================================
 export const farmerMiscRouter = Router();
 farmerMiscRouter.use(guard('FARMER'));
 
-// US-11
 farmerMiscRouter.get(
   '/earnings',
   asyncHandler(async (req, res) => {

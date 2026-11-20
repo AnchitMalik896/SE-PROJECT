@@ -4,7 +4,6 @@ import { money } from '../format';
 import type { Product } from '../types';
 import { Button, Stars } from '../ui';
 
-/** Marketplace card. `to` is where the card links (differs for signed-in customers vs. public browsing). */
 export function ProductCard({ product: p, to, onAdd, adding }: { product: Product; to: string; onAdd?: (p: Product) => void; adding?: boolean }) {
   return (
     <article className="glass product-card card hover" style={{ padding: 0 }}>

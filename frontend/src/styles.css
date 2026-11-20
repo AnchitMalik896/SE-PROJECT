@@ -1,9 +1,3 @@
-/* ============================================================
-   FarmDirect — flat "paper" design system
-   Solid surfaces, 1px borders, one muted green accent, no gradients.
-   (Variable names keep the old --glass-* prefix so role stylesheets keep working.)
-   ============================================================ */
-
 :root {
   --font-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-display: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
@@ -11,11 +5,11 @@
   --bg: #f6f3ec;
   --text: #1f2a22;
   --text-muted: #5b675e;
-  --glass: #fffdf8;          /* surface */
+  --glass: #fffdf8;          
   --glass-strong: #fffdf8;
-  --glass-soft: #f0ece1;     /* quiet fill */
-  --glass-border: #ddd6c4;   /* border */
-  --glass-edge: #e6e0d0;     /* hairline */
+  --glass-soft: #f0ece1;     
+  --glass-border: #ddd6c4;   
+  --glass-edge: #e6e0d0;     
   --shadow: 0 1px 2px rgba(31, 42, 34, 0.06);
   --accent: #2f6b3f;
   --accent-ink: #ffffff;
@@ -93,7 +87,6 @@ a { color: var(--accent); text-underline-offset: 3px; }
 .icon { width: 1.15em; height: 1.15em; flex: none; stroke-width: 1.8; }
 .backdrop { display: none; }
 
-/* ---------- surfaces (class kept as "glass" so existing markup works) ---------- */
 .glass { background: var(--glass); border: 1px solid var(--glass-border); box-shadow: var(--shadow); border-radius: var(--radius); }
 .card { padding: 1.25rem; }
 .card.hover { transition: border-color 0.15s ease; }
@@ -101,7 +94,6 @@ a { color: var(--accent); text-underline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 
-/* ---------- buttons ---------- */
 .btn {
   appearance: none; cursor: pointer; font: inherit; font-weight: 600; font-size: 0.93rem;
   display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
@@ -122,7 +114,6 @@ a { color: var(--accent); text-underline-offset: 3px; }
 .btn.block { width: 100%; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
 
-/* ---------- forms ---------- */
 .field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
 .field > label, .field > .lbl { font-weight: 600; font-size: 0.88rem; }
 .field .hint { font-size: 0.8rem; color: var(--text-muted); }
@@ -139,7 +130,6 @@ a { color: var(--accent); text-underline-offset: 3px; }
 .checkbox { display: flex; gap: 0.5rem; align-items: center; }
 .form-grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
 
-/* ---------- badges / banners ---------- */
 .badge {
   display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.12rem 0.55rem; border-radius: 6px;
   font-size: 0.76rem; font-weight: 650; white-space: nowrap;
@@ -155,14 +145,12 @@ a { color: var(--accent); text-underline-offset: 3px; }
 .banner.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
 .banner.info { background: var(--info-soft); color: var(--info); border-color: var(--info); }
 
-/* ---------- tables ---------- */
 .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); }
 table.table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .table th { text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 0.5rem 0.75rem; white-space: nowrap; border-bottom: 1px solid var(--glass-border); }
 .table td { padding: 0.7rem 0.75rem; border-bottom: 1px solid var(--glass-edge); vertical-align: top; }
 .table tr:hover td { background: var(--glass-soft); }
 
-/* ---------- stat tiles, chips ---------- */
 .stat { padding: 1rem 1.15rem; }
 .stat .num { font-family: var(--font-display); font-size: 1.8rem; font-weight: 600; line-height: 1.1; }
 .stat .lbl { color: var(--text-muted); font-size: 0.82rem; font-weight: 600; }
@@ -174,7 +162,6 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .chip:hover { background: var(--glass-soft); }
 .chip[aria-pressed='true'], .chip.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
-/* ---------- modal / toasts ---------- */
 .modal-back { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1rem; background: rgba(20, 26, 21, 0.5); }
 .modal { width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 1.5rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); }
 .toasts { position: fixed; z-index: 60; right: 1rem; bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; max-width: min(380px, calc(100vw - 2rem)); }
@@ -188,7 +175,6 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-muted); }
 .empty .big { font-size: 2.4rem; }
 
-/* ---------- app shell ---------- */
 .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 1.25rem; padding: 1rem; min-height: 100vh; }
 .sidebar { position: sticky; top: 1rem; align-self: start; height: calc(100vh - 2rem); padding: 1rem 0.7rem; display: flex; flex-direction: column; gap: 0.3rem; overflow-y: auto; }
 .brand { display: flex; align-items: center; gap: 0.55rem; font-family: var(--font-display); font-size: 1.2rem; font-weight: 650; padding: 0.2rem 0.6rem 0.9rem; text-decoration: none; color: var(--text); }
@@ -223,7 +209,6 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 }
 .topbar .btn { white-space: nowrap; }
 
-/* ---------- public / marketing ---------- */
 .public-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0.9rem 0.6rem 1.1rem; margin: 1rem auto; width: min(1120px, calc(100% - 2rem)); position: sticky; top: 1rem; z-index: 20; }
 .public-main { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding-bottom: 4rem; }
 .hero { padding: clamp(1.6rem, 5vw, 3.4rem); text-align: center; margin-bottom: 1.5rem; background: var(--accent-soft); border-color: transparent; box-shadow: none; }
@@ -236,7 +221,6 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .seg button { font: inherit; font-weight: 650; padding: 0.45rem 0.8rem; border-radius: 6px; border: 0; cursor: pointer; background: transparent; color: var(--text); }
 .seg button[aria-pressed='true'] { background: var(--glass); box-shadow: var(--shadow); color: var(--accent); }
 
-/* ---------- product cards ---------- */
 .product-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 .product-card .thumb { aspect-ratio: 16/9; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); overflow: hidden; }
 .product-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -245,7 +229,6 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .price { font-family: var(--font-display); font-size: 1.2rem; font-weight: 650; }
 .stars { color: #b7791f; letter-spacing: 1px; }
 
-/* ---------- order timeline ---------- */
 .timeline { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
 .timeline .step { display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); }
 .timeline .step .pt { width: 11px; height: 11px; border-radius: 50%; background: var(--glass); border: 2px solid var(--glass-border); }

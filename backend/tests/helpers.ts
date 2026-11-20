@@ -49,7 +49,6 @@ export async function createCourier() {
   return { email, token: await tokenFor(email) };
 }
 
-/** a farmer with a login token (signup is active immediately) */
 export async function createApprovedFarmer() {
   const { body } = await registerFarmer();
   const user = await prisma.user.findUniqueOrThrow({ where: { email: body.email as string } });
@@ -71,7 +70,6 @@ export async function createProduct(farmerToken: string, over: Record<string, un
   return r.body.product as { id: string; stock: number };
 }
 
-/** add to cart + checkout; returns the group id and the single order */
 export async function placeOrder(consumerToken: string, productId: string, quantity = 1, extra: Record<string, unknown> = {}) {
   const add = await api().post('/api/cart').set(auth(consumerToken)).send({ productId, quantity });
   if (add.status !== 201) throw new Error(`cart failed: ${JSON.stringify(add.body)}`);

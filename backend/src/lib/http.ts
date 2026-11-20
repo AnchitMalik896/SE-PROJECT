@@ -43,7 +43,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     res.status(400).json({ error: 'Please fix the highlighted fields', fields: zodFields(err) });
     return;
   }
-  // body-parser errors (malformed JSON etc.)
   const e = err as { status?: number; type?: string };
   if (e?.status && e.status >= 400 && e.status < 500) {
     res.status(e.status).json({ error: 'Bad request' });
@@ -64,7 +63,6 @@ export function dateRange(query: Record<string, unknown>) {
   let to = typeof query.to === 'string' && query.to ? new Date(query.to) : undefined;
   if (from && isNaN(from.getTime())) throw new HttpError(400, 'Invalid "from" date');
   if (to && isNaN(to.getTime())) throw new HttpError(400, 'Invalid "to" date');
-  // make `to` inclusive of the whole day when only a date was given
   if (to && typeof query.to === 'string' && query.to.length <= 10) to = new Date(to.getTime() + 86_400_000 - 1);
   const gte = from;
   const lte = to;

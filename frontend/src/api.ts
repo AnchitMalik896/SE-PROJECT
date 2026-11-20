@@ -1,5 +1,3 @@
-// In dev this is empty, so requests use the Vite proxy (/api -> localhost:4000).
-// In production set VITE_API_URL to the Render service URL, e.g. https://farm-direct-api.onrender.com
 const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 
 const TOKEN_KEY = 'fd.token';
@@ -16,14 +14,12 @@ export const tokenStore = {
     try {
       localStorage.setItem(TOKEN_KEY, t);
     } catch {
-      /* storage unavailable: session lasts until reload */
     }
   },
   clear() {
     try {
       localStorage.removeItem(TOKEN_KEY);
     } catch {
-      /* ignore */
     }
   },
 };
@@ -39,7 +35,6 @@ export class ApiError extends Error {
 }
 
 let onUnauthorized: (() => void) | null = null;
-/** AuthProvider registers this so an expired/revoked session sends the user back to login. */
 export function setUnauthorizedHandler(fn: (() => void) | null) {
   onUnauthorized = fn;
 }
@@ -81,7 +76,6 @@ export async function api<T = unknown>(method: string, path: string, opts: { bod
   }
   if (!res.ok) {
     const d = (data ?? {}) as { error?: string; fields?: Record<string, string> };
-    // a rejected token (not a failed login attempt) means the session is gone
     if (res.status === 401 && token && !path.startsWith('/auth/login')) onUnauthorized?.();
     throw new ApiError(res.status, d.error ?? `Request failed (${res.status})`, d.fields ?? {});
   }

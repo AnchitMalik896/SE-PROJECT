@@ -8,7 +8,6 @@ import { Pay } from './Pay';
 import { ProductDetail } from './ProductDetail';
 import { Shop } from './Shop';
 
-// Paths are absolute. Rendered inside <Shell> for the CONSUMER role.
 export const consumerRoutes: RouteObject[] = [
   { path: '/shop', element: <Shop /> },
   { path: '/shop/product/:id', element: <ProductDetail /> },

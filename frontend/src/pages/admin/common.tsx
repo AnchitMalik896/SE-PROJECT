@@ -5,7 +5,6 @@ import { errMsg, fieldErrs, useDebounced, useLoad } from '../../hooks';
 import type { AdminUser, Paged } from '../../types';
 import { Async, Banner, Button, Chips, ConfirmDialog, Empty, Field, Modal, Pagination, StatusBadge, useToast } from '../../ui';
 
-/** Two date inputs (yyyy-mm-dd). Empty string = unbounded. */
 export function DateRange({ from, to, onChange }: { from: string; to: string; onChange: (from: string, to: string) => void }) {
   return (
     <>
@@ -18,7 +17,6 @@ export function DateRange({ from, to, onChange }: { from: string; to: string; on
 export const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 export const daysAgo = (n: number) => isoDay(new Date(Date.now() - n * 86_400_000));
 
-// ------------------------------------------------------------------ edit user
 export function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
   const [f, setF] = useState({
@@ -73,7 +71,6 @@ export function EditUserModal({ user, onClose, onSaved }: { user: AdminUser; onC
   );
 }
 
-// ------------------------------------------------------------------ user table + directory
 type Dlg = { kind: 'edit' | 'block' | 'remove'; user: AdminUser } | null;
 
 export function UserTable({ users, onChanged }: { users: AdminUser[]; onChanged: () => void }) {
@@ -163,7 +160,6 @@ export function UserTable({ users, onChanged }: { users: AdminUser[]; onChanged:
   );
 }
 
-/** Searchable, filterable, paginated list of one role. */
 export function UserDirectory({ role, refreshKey = 0, emptyText }: { role: 'FARMER' | 'CONSUMER' | 'DELIVERY'; refreshKey?: number; emptyText: string }) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');

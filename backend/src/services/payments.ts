@@ -6,11 +6,6 @@ import { HttpError } from '../lib/http.js';
 import { audit, notify } from '../lib/notify.js';
 import { short } from './orders.js';
 
-/**
- * Payment gateway abstraction (D4). The real gateway is not chosen yet, so only the mock
- * provider exists. A real provider needs createIntent() and to POST signed events to
- * /api/payments/webhook — everything downstream is already idempotent and signature-checked.
- */
 export interface PaymentProvider {
   name: string;
   createIntent(input: { groupId: string; amount: number }): { gatewayRef: string };
@@ -22,7 +17,6 @@ export const mockProvider: PaymentProvider = {
 };
 export const paymentProvider: PaymentProvider = mockProvider;
 
-// ---------- webhook signature ----------
 export function signPayload(rawBody: string, secret = config.webhookSecret): string {
   return crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
 }
@@ -50,7 +44,6 @@ export type GatewayEvent = z.infer<typeof eventSchema>;
 
 export type WebhookResult = { ok: true; duplicate: boolean; applied: boolean; status: string };
 
-/** Verifies and applies one gateway event. Safe to call any number of times with the same eventId. */
 export async function processWebhook(rawBody: string, signature: string | undefined): Promise<WebhookResult> {
   if (!verifySignature(rawBody, signature)) throw new HttpError(401, 'Invalid webhook signature');
   let json: unknown;
@@ -73,7 +66,6 @@ export async function processWebhook(rawBody: string, signature: string | undefi
 
     const fresh = await tx.payment.findUnique({ where: { id: payment.id } });
     if (!fresh) throw new HttpError(404, 'Unknown payment');
-    // Only a PENDING payment can change. Anything else (late/duplicate-with-new-id) is recorded and ignored.
     const apply = fresh.status === 'PENDING';
     await tx.paymentEvent.create({ data: { eventId: ev.eventId, paymentId: fresh.id, status: ev.status, applied: apply } });
 
@@ -101,7 +93,6 @@ export async function processWebhook(rawBody: string, signature: string | undefi
   });
 }
 
-/** Lets a consumer retry a failed payment: new gateway reference, same amount, orders go back to PENDING. */
 export async function retryPayment(groupId: string, consumerId: string) {
   return prisma.$transaction(async (tx) => {
     const payment = await tx.payment.findUnique({ where: { groupId } });

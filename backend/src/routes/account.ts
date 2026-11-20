@@ -10,7 +10,6 @@ import { publicUser } from './auth.js';
 
 export const accountRouter = Router();
 
-// ---------- profile ----------
 const profileSchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
   phone: z
@@ -27,7 +26,6 @@ const farmerProfileSchema = z.object({
   bio: z.string().trim().max(500).optional(),
 });
 
-// US-06: farmers edit contact + farm details; consumers edit contact + address
 accountRouter.patch(
   '/profile',
   authenticate,
@@ -53,7 +51,6 @@ accountRouter.patch(
   }),
 );
 
-// ---------- notifications (US-23) ----------
 accountRouter.get(
   '/notifications',
   authenticate,
@@ -80,7 +77,6 @@ accountRouter.post(
   }),
 );
 
-// ---------- complaints (filed here, resolved by admin: US-38) ----------
 accountRouter.post(
   '/complaints',
   guard('CONSUMER', 'FARMER', 'DELIVERY'),
@@ -99,7 +95,6 @@ accountRouter.post(
       const o = await prisma.order.findUnique({ where: { id: d.orderId }, include: { delivery: true } });
       const involved = o && (o.consumerId === u.id || o.farmerId === u.id || o.delivery?.deliveryPersonId === u.id);
       if (!o || !involved) throw new HttpError(404, 'Order not found');
-      // the "other party" is the farmer for consumers, and the consumer for farmers
       againstId = u.role === 'CONSUMER' ? o.farmerId : u.role === 'FARMER' ? o.consumerId : o.consumerId;
     }
     const c = await prisma.complaint.create({ data: { filedById: u.id, againstId, orderId: d.orderId, subject: d.subject, description: d.description } });
@@ -117,7 +112,6 @@ accountRouter.get(
   }),
 );
 
-// ---------- dev-only: stands in for the email/SMS inbox that would receive reset codes ----------
 accountRouter.get('/dev/outbox', (req, res) => {
   if (config.isProd) return res.status(404).json({ error: 'Not found' });
   res.json({ items: readOutbox(typeof req.query.to === 'string' ? req.query.to : undefined) });

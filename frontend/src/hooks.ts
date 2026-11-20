@@ -9,10 +9,6 @@ export interface Loadable<T> {
   setData: (d: T | null) => void;
 }
 
-/**
- * Fetches on mount and whenever `deps` change. Stale responses are ignored.
- * Pass `pollMs` to refresh in the background (used for live order tracking).
- */
 export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = [], pollMs?: number): Loadable<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +33,6 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = [], pollMs?: 
     }
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => void run(false), deps);
 
   useEffect(() => {
@@ -51,7 +46,6 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = [], pollMs?: 
   return { data, error, loading, reload: () => run(true), setData };
 }
 
-/** Debounced value (search boxes). */
 export function useDebounced<T>(value: T, ms = 300): T {
   const [v, setV] = useState(value);
   useEffect(() => {

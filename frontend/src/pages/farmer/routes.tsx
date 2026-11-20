@@ -6,7 +6,6 @@ import { Inventory } from './Inventory';
 import { FarmerOrders } from './Orders';
 import { Products } from './Products';
 
-// Paths are absolute. Rendered inside <Shell> for the FARMER role.
 export const farmerRoutes: RouteObject[] = [
   { path: '/farmer', element: <Dashboard /> },
   { path: '/farmer/products', element: <Products /> },

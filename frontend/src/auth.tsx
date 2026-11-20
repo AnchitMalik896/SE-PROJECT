@@ -59,7 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           await post('/auth/logout');
         } catch {
-          /* token may already be invalid — still log out locally */
         }
         tokenStore.clear();
         setUser(null);
@@ -78,7 +77,6 @@ export function useAuth() {
   return v;
 }
 
-/** Route guard: sends anonymous users to /login (remembering where they were going) and wrong-role users home. */
 export function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { user, loading } = useAuth();
   const loc = useLocation();

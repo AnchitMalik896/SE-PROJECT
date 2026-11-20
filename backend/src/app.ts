@@ -18,7 +18,6 @@ export function createApp() {
   app.use(helmet());
   app.use(cors({ origin: config.clientOrigin, credentials: false }));
 
-  // The webhook needs the raw bytes to verify the HMAC signature, so it is mounted BEFORE express.json().
   app.post('/api/payments/webhook', express.raw({ type: '*/*', limit: '100kb' }), webhookHandler);
 
   app.use(express.json({ limit: '100kb' }));
@@ -26,7 +25,7 @@ export function createApp() {
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
   app.use('/api/auth', authRouter);
-  app.use('/api', catalogRouter); // /categories, /products, /settings/public
+  app.use('/api', catalogRouter); 
   app.use('/api/cart', cartRouter);
   app.use('/api/orders', ordersRouter);
   app.use('/api/payments', paymentsRouter);
@@ -35,7 +34,7 @@ export function createApp() {
   app.use('/api/farmer/orders', farmerOrdersRouter);
   app.use('/api/farmer', farmerMiscRouter);
   app.use('/api/admin', adminRouter);
-  app.use('/api', accountRouter); // /profile, /notifications, /complaints, /dev/outbox
+  app.use('/api', accountRouter); 
 
   app.use('/api', (_req, _res, next) => next(new HttpError(404, 'Not found')));
   app.use(errorHandler);

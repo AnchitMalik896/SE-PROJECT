@@ -7,7 +7,6 @@ import { errMsg, fieldErrs, useLoad } from '../../hooks';
 import type { Paged, Product } from '../../types';
 import { Banner, Button, Field, Glass, TextArea } from '../../ui';
 
-// ---------------------------------------------------------------- landing
 export function Landing() {
   const featured = useLoad(() => get<Paged<Product>>('/products', { pageSize: 4 }), []);
   return (
@@ -48,7 +47,6 @@ export function Landing() {
   );
 }
 
-// ---------------------------------------------------------------- login
 const DEMO = [
   ['Customer', 'asha@farmdirect.test'],
   ['Farmer', 'harpreet@farmdirect.test'],
@@ -77,7 +75,7 @@ export function Login() {
     } catch (err) {
       setError(errMsg(err));
       setFields(fieldErrs(err));
-      setBusy(false); // invalid credentials: stay on the form so the user can retry
+      setBusy(false); 
     }
   }
 
@@ -111,7 +109,6 @@ export function Login() {
   );
 }
 
-// ---------------------------------------------------------------- register
 export function Register() {
   const [params] = useSearchParams();
   const [role, setRole] = useState<'consumer' | 'farmer'>(params.get('role') === 'farmer' ? 'farmer' : 'consumer');
@@ -193,7 +190,6 @@ export function Register() {
   );
 }
 
-// ---------------------------------------------------------------- password reset
 export function ForgotPassword() {
   const nav = useNavigate();
   const [identifier, setIdentifier] = useState('');
@@ -210,7 +206,6 @@ export function ForgotPassword() {
       const r = await post<{ message: string }>('/auth/forgot', { identifier: identifier.trim() });
       setSent(r.message);
       if (import.meta.env.DEV) {
-        // dev only: there is no real email/SMS provider, so read the code from the server's outbox
         const to = identifier.includes('@') ? identifier.trim().toLowerCase() : identifier.replace(/[\s-]/g, '');
         const box = await get<{ items: { body: string }[] }>('/dev/outbox', { to }).catch(() => ({ items: [] }));
         setDevCode(box.items[0]?.body ?? null);

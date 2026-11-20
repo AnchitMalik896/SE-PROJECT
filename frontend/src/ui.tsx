@@ -15,7 +15,6 @@ import {
 import { label as pretty } from './format';
 import type { Paged } from './types';
 
-// ---------------------------------------------------------------- layout bits
 export function Glass({ children, className = '', strong, hover, as: Tag = 'div', ...rest }: { children: ReactNode; className?: string; strong?: boolean; hover?: boolean; as?: 'div' | 'section' | 'article' } & React.HTMLAttributes<HTMLElement>) {
   return (
     <Tag className={`glass card ${strong ? 'strong' : ''} ${hover ? 'hover' : ''} ${className}`} {...rest}>
@@ -65,7 +64,6 @@ export function Empty({ icon = '🌱', title, children }: { icon?: string; title
   );
 }
 
-/** Standard loading / error / content switch for a useLoad() result. */
 export function Async({ loading, error, onRetry, children }: { loading: boolean; error: string | null; onRetry?: () => void; children: ReactNode }) {
   if (loading) return <Spinner />;
   if (error)
@@ -84,7 +82,6 @@ export function Banner({ kind = 'info', children }: { kind?: 'error' | 'ok' | 'w
   return <div className={`banner ${kind}`} role={kind === 'error' ? 'alert' : 'status'}>{children}</div>;
 }
 
-// ---------------------------------------------------------------- buttons
 export function Button({ variant, size, block, busy, children, className = '', ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'danger' | 'ghost'; size?: 'sm'; block?: boolean; busy?: boolean }) {
   return (
     <button className={`btn ${variant ?? ''} ${size ?? ''} ${block ? 'block' : ''} ${className}`} disabled={busy || rest.disabled} {...rest}>
@@ -93,7 +90,6 @@ export function Button({ variant, size, block, busy, children, className = '', .
   );
 }
 
-// ---------------------------------------------------------------- form fields
 interface FieldShell { label: string; error?: string; hint?: string; className?: string }
 
 export function Field({ label, error, hint, className = '', ...rest }: FieldShell & InputHTMLAttributes<HTMLInputElement>) {
@@ -132,15 +128,10 @@ export function Select({ label, error, hint, className = '', children, ...rest }
   );
 }
 
-// ---------------------------------------------------------------- badges
 const TONES: Record<string, 'ok' | 'warn' | 'danger' | 'info' | ''> = {
-  // orders
   PLACED: 'info', ACCEPTED: 'info', PACKED: 'warn', DISPATCHED: 'warn', DELIVERED: 'ok', CANCELLED: 'danger',
-  // payments
   PENDING: 'warn', PAID: 'ok', FAILED: 'danger', REFUNDED: 'info', SUCCESS: 'ok',
-  // delivery
   UNASSIGNED: 'warn', ASSIGNED: 'info', PICKED_UP: 'warn', ON_THE_WAY: 'warn',
-  // accounts
   ACTIVE: 'ok', REJECTED: 'danger', BLOCKED: 'danger', OPEN: 'warn', RESOLVED: 'ok', APPROVED: 'ok',
 };
 export function StatusBadge({ status, text }: { status: string; text?: string }) {
@@ -170,7 +161,6 @@ export function StarPicker({ value, onChange }: { value: number; onChange: (n: n
   );
 }
 
-// ---------------------------------------------------------------- modal
 export function Modal({ title, onClose, children, footer }: { title: string; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -195,7 +185,6 @@ export function Modal({ title, onClose, children, footer }: { title: string; onC
   );
 }
 
-/** Asks for confirmation, optionally collecting a required reason. */
 export function ConfirmDialog({ title, message, confirmText = 'Confirm', danger, reasonLabel, reasonRequired = true, onConfirm, onClose }: { title: string; message?: ReactNode; confirmText?: string; danger?: boolean; reasonLabel?: string; reasonRequired?: boolean; onConfirm: (reason: string) => Promise<void> | void; onClose: () => void }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -221,7 +210,6 @@ export function ConfirmDialog({ title, message, confirmText = 'Confirm', danger,
   );
 }
 
-// ---------------------------------------------------------------- tabs / chips
 export function Chips<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
   return (
     <div className="chips" role="group">
@@ -244,7 +232,6 @@ export function Pagination({ data, onPage }: { data: Pick<Paged<unknown>, 'page'
   );
 }
 
-// ---------------------------------------------------------------- order timeline
 const STEPS = ['PLACED', 'ACCEPTED', 'PACKED', 'DISPATCHED', 'DELIVERED'] as const;
 const STEP_LABEL: Record<string, string> = { PLACED: 'Placed', ACCEPTED: 'Accepted', PACKED: 'Packed', DISPATCHED: 'Out for delivery', DELIVERED: 'Delivered' };
 export function OrderTimeline({ status }: { status: string }) {
@@ -264,7 +251,6 @@ export function OrderTimeline({ status }: { status: string }) {
   );
 }
 
-// ---------------------------------------------------------------- toasts
 interface Toast { id: number; kind: 'ok' | 'error'; text: string }
 const ToastCtx = createContext<{ ok: (t: string) => void; error: (t: string) => void } | null>(null);
 

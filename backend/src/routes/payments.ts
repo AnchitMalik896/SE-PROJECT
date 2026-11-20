@@ -9,7 +9,6 @@ import { asyncHandler, HttpError, parse } from '../lib/http.js';
 import { processWebhook, retryPayment, signPayload } from '../services/payments.js';
 import { short } from '../services/orders.js';
 
-/** POST /api/payments/webhook — mounted with express.raw() so the HMAC is computed over the exact bytes. */
 export const webhookHandler = asyncHandler(async (req: Request, res: Response) => {
   const raw = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : typeof req.body === 'string' ? req.body : '';
   const result = await processWebhook(raw, req.header('x-signature') ?? undefined);
@@ -49,7 +48,6 @@ paymentsRouter.get(
   }),
 );
 
-// US-18: failed payment lets the consumer retry
 paymentsRouter.post(
   '/:groupId/retry',
   asyncHandler(async (req, res) => {
@@ -60,10 +58,6 @@ paymentsRouter.post(
   }),
 );
 
-/**
- * Mock gateway: simulates what a real gateway does — it decides the outcome, then calls OUR webhook
- * with a signed event. Everything after that goes through the exact same code path as production.
- */
 paymentsRouter.post(
   '/:groupId/mock-complete',
   asyncHandler(async (req, res) => {
@@ -73,7 +67,7 @@ paymentsRouter.post(
     const d = parse(
       z.object({
         outcome: z.enum(['SUCCESS', 'DECLINED', 'TIMEOUT']),
-        duplicate: z.boolean().optional(), // also send the same event a second time (idempotency demo)
+        duplicate: z.boolean().optional(), 
       }),
       req.body,
     );

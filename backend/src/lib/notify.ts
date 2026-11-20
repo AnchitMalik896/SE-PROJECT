@@ -24,7 +24,6 @@ export async function audit(
   await db.auditLog.create({ data: { actorId, action, entity, detail } });
 }
 
-// ---- dev outbox: stands in for email/SMS delivery of reset codes ----
 export interface OutboxMessage {
   to: string;
   channel: 'email' | 'sms';
@@ -36,7 +35,6 @@ const outbox: OutboxMessage[] = [];
 export function sendMessage(m: Omit<OutboxMessage, 'at'>) {
   outbox.unshift({ ...m, at: new Date().toISOString() });
   if (outbox.length > 100) outbox.pop();
-  // eslint-disable-next-line no-console
   console.log(`[outbox:${m.channel}] to=${m.to} :: ${m.subject} :: ${m.body}`);
 }
 export function readOutbox(to?: string) {

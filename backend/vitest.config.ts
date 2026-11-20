@@ -10,7 +10,7 @@ export default defineConfig({
       JWT_SECRET: 'test-secret',
       PAYMENT_WEBHOOK_SECRET: 'test-webhook-secret',
     },
-    fileParallelism: false, // one shared SQLite test DB
+    fileParallelism: false, 
     testTimeout: 20_000,
     hookTimeout: 60_000,
   },

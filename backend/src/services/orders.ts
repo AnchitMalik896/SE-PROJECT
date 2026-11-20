@@ -5,7 +5,6 @@ import { audit, notify } from '../lib/notify.js';
 
 export type OrderStatus = 'PLACED' | 'ACCEPTED' | 'PACKED' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
 
-/** The only legal order status transitions (FR-10). */
 export const TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   PLACED: ['ACCEPTED', 'CANCELLED'],
   ACCEPTED: ['PACKED', 'CANCELLED'],
@@ -24,11 +23,6 @@ export function assertTransition(from: string, to: string) {
 
 export type Canceller = 'CONSUMER' | 'FARMER' | 'ADMIN' | 'SYSTEM';
 
-/**
- * Cancels an order: restores stock, refunds if it was paid, shrinks/fails an unpaid payment.
- * Consumers/farmers may cancel only before the order is packed (D2); admins can force-cancel
- * a packed or dispatched order (e.g. failed delivery) and refund it (D3).
- */
 export async function cancelOrder(orderId: string, reason: string, by: Canceller, actorId: string | null) {
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true, delivery: true } });

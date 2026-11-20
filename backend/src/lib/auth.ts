@@ -37,7 +37,6 @@ function bearer(req: Request): string | null {
   return h.slice(7);
 }
 
-/** Verifies the JWT, then checks the server-side session (logout/blocked users are rejected immediately). */
 export async function authenticate(req: Request, _res: Response, next: NextFunction) {
   try {
     const token = bearer(req);
@@ -70,7 +69,6 @@ export const requireRole =
     next();
   };
 
-/** authenticate + role in one middleware array */
 export const guard = (...roles: Role[]) => [authenticate, requireRole(...roles)];
 
 export function me(req: Request): AuthUser {

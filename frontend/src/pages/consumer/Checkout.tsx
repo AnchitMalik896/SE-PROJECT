@@ -9,7 +9,6 @@ import { Async, Banner, Button, Empty, Glass, PageHead, TextArea } from '../../u
 
 export function Checkout() {
   const nav = useNavigate();
-  // one key per visit: double-clicks and retries can never create duplicate orders
   const key = useRef(crypto.randomUUID());
   const data = useLoad(async () => {
     const [cart, me, settings] = await Promise.all([get<Cart>('/cart'), get<{ user: User }>('/auth/me'), get<{ deliveryFee: number }>('/settings/public')]);

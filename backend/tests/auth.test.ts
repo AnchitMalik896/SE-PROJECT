@@ -44,7 +44,6 @@ describe('Authentication (AT-01 … AT-06)', () => {
     expect(l.status).toBe(200);
     expect(l.body.token).toBeTruthy();
     expect(l.body.user.role).toBe('CONSUMER');
-    // phone login works too
     expect((await login(body.phone as string)).status).toBe(200);
   });
 
@@ -52,7 +51,6 @@ describe('Authentication (AT-01 … AT-06)', () => {
     const { body } = await registerConsumer();
     const bad = await login(body.email as string, 'WrongPass1');
     expect(bad.status).toBe(401);
-    // unknown accounts get the identical message (no account enumeration)
     const unknown = await login('nobody@t.test', 'WrongPass1');
     expect(unknown.status).toBe(401);
     expect(unknown.body.error).toBe(bad.body.error);
@@ -82,7 +80,6 @@ describe('Authentication (AT-01 … AT-06)', () => {
 
     const f = await api().post('/api/auth/forgot').send({ identifier: email });
     expect(f.status).toBe(200);
-    // same response for an unknown account
     const unknown = await api().post('/api/auth/forgot').send({ identifier: 'ghost@t.test' });
     expect(unknown.body.message).toBe(f.body.message);
 
@@ -91,10 +88,9 @@ describe('Authentication (AT-01 … AT-06)', () => {
     const ok = await api().post('/api/auth/reset').send({ identifier: email, code, newPassword: 'NewPass123' });
     expect(ok.status).toBe(200);
 
-    expect((await login(email, PASS)).status).toBe(401); // old password stops working
+    expect((await login(email, PASS)).status).toBe(401); 
     expect((await login(email, 'NewPass123')).status).toBe(200);
-    expect((await api().get('/api/auth/me').set(auth(oldToken))).status).toBe(401); // old sessions ended
-    // a code cannot be reused
+    expect((await api().get('/api/auth/me').set(auth(oldToken))).status).toBe(401); 
     expect((await api().post('/api/auth/reset').send({ identifier: email, code, newPassword: 'Another123' })).status).toBe(400);
   });
 

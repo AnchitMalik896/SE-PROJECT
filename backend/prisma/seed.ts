@@ -15,7 +15,6 @@ async function user(data: { name: string; email: string; phone: string; role: st
 }
 
 async function main() {
-  // Verification was removed: promote farmers created by older versions of the app.
   await prisma.user.updateMany({ where: { role: 'FARMER', status: { in: ['PENDING', 'REJECTED'] } }, data: { status: 'ACTIVE' } });
   await prisma.farmerProfile.updateMany({
     where: { verification: { in: ['PENDING', 'REJECTED'] } },

@@ -21,10 +21,6 @@ const include = {
 } satisfies Prisma.DeliveryInclude;
 type DeliveryFull = Prisma.DeliveryGetPayload<{ include: typeof include }>;
 
-/**
- * US-26: addresses and phone numbers are revealed only for deliveries assigned to the caller.
- * Unassigned deliveries show the farm's pickup area only.
- */
 function shape(d: DeliveryFull, viewerId: string) {
   const mine = d.deliveryPersonId === viewerId;
   return {
@@ -57,7 +53,6 @@ async function mineOrThrow(id: string, userId: string) {
   return d;
 }
 
-// US-24 (pool): packed orders nobody has taken yet, minus ones I declined
 deliveryRouter.get(
   '/available',
   asyncHandler(async (req, res) => {
@@ -71,7 +66,6 @@ deliveryRouter.get(
   }),
 );
 
-// US-24: my deliveries, active vs completed shown separately
 deliveryRouter.get(
   '/mine',
   asyncHandler(async (req, res) => {
@@ -97,7 +91,6 @@ deliveryRouter.get(
   }),
 );
 
-// US-25: accept — atomic claim so two couriers can't both get it
 deliveryRouter.post(
   '/:id/accept',
   asyncHandler(async (req, res) => {
@@ -115,7 +108,6 @@ deliveryRouter.post(
   }),
 );
 
-// US-25: decline an unassigned request — it returns to the pool for others
 deliveryRouter.post(
   '/:id/decline',
   asyncHandler(async (req, res) => {
@@ -131,7 +123,6 @@ deliveryRouter.post(
   }),
 );
 
-// FR-15 assignment rejection after accepting: only before pickup; goes back to the pool
 deliveryRouter.post(
   '/:id/release',
   asyncHandler(async (req, res) => {
@@ -148,7 +139,6 @@ deliveryRouter.post(
   }),
 );
 
-// US-28: picked up -> on the way (-> delivered via OTP confirm) or failed
 deliveryRouter.post(
   '/:id/status',
   asyncHandler(async (req, res) => {
@@ -171,7 +161,6 @@ deliveryRouter.post(
         await tx.delivery.update({ where: { id: cur.id }, data: { status: 'ON_THE_WAY' } });
         await notify(cur.order.consumerId, 'ORDER', `Your order #${short(cur.orderId)} is on the way.`, tx);
       } else {
-        // failed delivery: escalate to an administrator, keep the order for their decision
         await tx.delivery.update({ where: { id: cur.id }, data: { status: 'FAILED', failureReason: d.reason, lat: null, lng: null } });
         await notifyAdmins('DELIVERY', `Delivery for order #${short(cur.orderId)} failed: ${d.reason}`, tx);
         await notify(cur.order.consumerId, 'ORDER', `We could not deliver order #${short(cur.orderId)}. Support has been notified.`, tx);
@@ -182,7 +171,6 @@ deliveryRouter.post(
   }),
 );
 
-// US-29: live location, only while out for delivery
 deliveryRouter.post(
   '/:id/location',
   asyncHandler(async (req, res) => {
@@ -195,7 +183,6 @@ deliveryRouter.post(
   }),
 );
 
-// US-30: confirm with the consumer's OTP — releases the farmer's payout
 deliveryRouter.post(
   '/:id/confirm',
   asyncHandler(async (req, res) => {

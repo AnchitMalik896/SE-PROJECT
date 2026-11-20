@@ -1,10 +1,8 @@
-/** paise -> "₹1,234.50" */
 export function money(paise: number): string {
   const rupees = paise / 100;
   return '₹' + rupees.toLocaleString('en-IN', { minimumFractionDigits: Number.isInteger(rupees) ? 0 : 2, maximumFractionDigits: 2 });
 }
 
-/** user-typed rupees ("40", "40.5") -> paise, or null when not a valid amount */
 export function toPaise(input: string | number): number | null {
   const n = typeof input === 'number' ? input : Number(String(input).trim());
   if (!Number.isFinite(n) || n < 0) return null;
@@ -41,7 +39,6 @@ const EMOJI: Record<string, string> = {
 };
 export const emojiFor = (categoryName?: string | null) => EMOJI[(categoryName ?? '').toLowerCase()] ?? '🧺';
 
-/** Google Maps directions link (works without an API key) */
 export function mapsDirections(origin: string, destination: string) {
   return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
 }

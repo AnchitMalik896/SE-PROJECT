@@ -20,7 +20,6 @@ const limiter = (max: number) =>
     message: { error: 'Too many attempts. Please wait a few minutes and try again.' },
   });
 
-// ---------- shared field rules ----------
 export const nameField = z.string().trim().min(2, 'Enter your full name').max(80);
 export const emailField = z.string().trim().toLowerCase().email('Enter a valid email address');
 export const phoneField = z
@@ -72,7 +71,6 @@ export const publicUser = (u: {
   address: string | null;
 }) => ({ id: u.id, name: u.name, email: u.email, phone: u.phone, role: u.role, status: u.status, address: u.address });
 
-// ---------- registration ----------
 authRouter.post(
   '/register/consumer',
   limiter(30),
@@ -86,7 +84,7 @@ authRouter.post(
         phone: d.phone,
         address: d.address,
         role: 'CONSUMER',
-        status: 'ACTIVE', // FR-02: active immediately
+        status: 'ACTIVE', 
         passwordHash: await bcrypt.hash(d.password, 10),
       },
     });
@@ -107,7 +105,7 @@ authRouter.post(
         email: d.email,
         phone: d.phone,
         role: 'FARMER',
-        status: 'ACTIVE', // farmers can sign up and start selling immediately
+        status: 'ACTIVE', 
         passwordHash: await bcrypt.hash(d.password, 10),
         farmerProfile: {
           create: { farmName: d.farmName, farmLocation: d.farmLocation, bio: d.bio, verification: 'APPROVED', verifiedAt: new Date() },
@@ -122,7 +120,6 @@ authRouter.post(
   }),
 );
 
-// ---------- login / logout ----------
 const loginSchema = z.object({ identifier: z.string().trim().min(3, 'Enter your email or phone'), password: z.string().min(1, 'Enter your password') });
 const DUMMY_HASH = bcrypt.hashSync('not-a-real-password-1', 10);
 
@@ -136,7 +133,6 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const d = parse(loginSchema, req.body);
     const user = await prisma.user.findFirst({ where: normaliseIdentifier(d.identifier), include: { farmerProfile: true } });
-    // always run a hash comparison so response time does not reveal whether the account exists
     const ok = await bcrypt.compare(d.password, user?.passwordHash ?? DUMMY_HASH);
     if (!user || !ok) throw new HttpError(401, 'Invalid email/phone or password');
 
@@ -171,7 +167,6 @@ authRouter.get(
   }),
 );
 
-// ---------- password reset (FR-05) ----------
 const hashCode = (code: string, userId: string) => crypto.createHash('sha256').update(`${userId}:${code}`).digest('hex');
 const GENERIC_RESET_MESSAGE = 'If an account exists for that email or phone, a reset code has been sent. It expires in 10 minutes.';
 
@@ -200,7 +195,6 @@ authRouter.post(
       });
       await audit(user.id, 'PASSWORD_RESET_REQUESTED', `user:${user.id}`);
     }
-    // identical response whether or not the account exists
     res.json({ message: GENERIC_RESET_MESSAGE });
   }),
 );
@@ -232,7 +226,6 @@ authRouter.post(
     await prisma.$transaction([
       prisma.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(d.newPassword, 10) } }),
       prisma.passwordReset.update({ where: { id: reset.id }, data: { usedAt: new Date() } }),
-      // the old password must stop working everywhere: end every existing session
       prisma.session.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } }),
     ]);
     await audit(user.id, 'PASSWORD_RESET', `user:${user.id}`);

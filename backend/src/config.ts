@@ -14,9 +14,8 @@ export const config = {
   tokenTtlHours: 12,
   clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET ?? 'dev-only-webhook-secret',
-  // The mock gateway lets the UI simulate success / decline / timeout / duplicate callbacks.
   enableMockGateway: process.env.ENABLE_MOCK_GATEWAY ? process.env.ENABLE_MOCK_GATEWAY === 'true' : !isProd,
   resetCodeTtlMinutes: 10,
   unpaidOrderExpiryMinutes: 30,
-  defaultDeliveryFee: 4000, // paise (₹40)
+  defaultDeliveryFee: 4000, 
 };

@@ -9,7 +9,6 @@ import { errMsg, useDebounced, useLoad } from '../../hooks';
 import type { Category, Paged, Product } from '../../types';
 import { Async, Button, Chips, Empty, Glass, Pagination, Stars, useToast } from '../../ui';
 
-/** Public marketplace: anyone can look; adding to the cart needs a customer account. */
 function useAddToCart() {
   const { user } = useAuth();
   const nav = useNavigate();

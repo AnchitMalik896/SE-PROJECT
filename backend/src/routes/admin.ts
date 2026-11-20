@@ -31,9 +31,6 @@ const shapeUser = (u: Prisma.UserGetPayload<{ include: typeof userInclude }>) =>
   farmerProfile: u.farmerProfile,
 });
 
-// =====================================================================
-// Users (US-31, US-32, US-33, US-40)
-// =====================================================================
 adminRouter.get(
   '/users',
   asyncHandler(async (req, res) => {
@@ -113,7 +110,6 @@ adminRouter.post(
   }),
 );
 
-// reversible (US-40)
 adminRouter.post(
   '/users/:id/unblock',
   asyncHandler(async (req, res) => {
@@ -128,9 +124,6 @@ adminRouter.post(
   }),
 );
 
-// =====================================================================
-// Delivery personnel (US-33)
-// =====================================================================
 adminRouter.post(
   '/delivery',
   asyncHandler(async (req, res) => {
@@ -158,7 +151,6 @@ adminRouter.delete(
     if (!u) throw new HttpError(404, 'Delivery person not found');
     const used = await prisma.delivery.count({ where: { deliveryPersonId: id } });
     if (used > 0) {
-      // keep history intact: deactivate instead of delete
       await prisma.$transaction([
         prisma.user.update({ where: { id }, data: { status: 'BLOCKED', blockReason: 'Removed by administrator' } }),
         prisma.session.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } }),
@@ -215,9 +207,6 @@ adminRouter.post(
   }),
 );
 
-// =====================================================================
-// Categories + product moderation (US-35)
-// =====================================================================
 adminRouter.post(
   '/categories',
   asyncHandler(async (req, res) => {
@@ -270,7 +259,7 @@ adminRouter.get(
   asyncHandler(async (req, res) => {
     const { page, pageSize, skip, take } = pageParams(req.query, 20);
     const q = str(req.query.search);
-    const status = str(req.query.status); // taken_down | active
+    const status = str(req.query.status); 
     const where: Prisma.ProductWhereInput = {
       active: true,
       ...(status === 'taken_down' ? { takenDownReason: { not: null } } : status === 'active' ? { takenDownReason: null } : {}),
@@ -313,13 +302,9 @@ adminRouter.post(
   }),
 );
 
-// =====================================================================
-// Order + payment monitoring (US-36, US-37)
-// =====================================================================
 const MIN = 60_000;
 type OrderForFlags = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
-/** Problems an admin should look at: stuck/delayed orders (US-36), failed deliveries, silent couriers (FR-15). */
 export function orderFlags(o: OrderForFlags, now = Date.now()): string[] {
   const flags: string[] = [];
   const age = (now - o.updatedAt.getTime()) / MIN;
@@ -363,7 +348,6 @@ adminRouter.get(
   }),
 );
 
-// admin override: cancel + refund (e.g. failed delivery). Allowed up to DISPATCHED.
 adminRouter.post(
   '/orders/:id/cancel-refund',
   asyncHandler(async (req, res) => {
@@ -378,7 +362,7 @@ adminRouter.get(
   '/payments',
   asyncHandler(async (req, res) => {
     const { page, pageSize, skip, take } = pageParams(req.query, 20);
-    const status = str(req.query.status); // PENDING | SUCCESS | FAILED
+    const status = str(req.query.status); 
     const refunded = req.query.refunded === 'true';
     const range = dateRange(req.query);
     const where: Prisma.PaymentWhereInput = { ...(status ? { status } : {}), ...(refunded ? { refunds: { some: {} } } : {}), ...(range ? { createdAt: range } : {}) };
@@ -409,9 +393,6 @@ adminRouter.get(
   }),
 );
 
-// =====================================================================
-// Complaints & disputes (US-38)
-// =====================================================================
 adminRouter.get(
   '/complaints',
   asyncHandler(async (req, res) => {
@@ -438,13 +419,12 @@ adminRouter.post(
     await prisma.complaint.update({ where: { id }, data: { status: 'RESOLVED', resolutionNotes: d.notes, resolvedAt: new Date() } });
     const msg = `Complaint "${c.subject}" was resolved: ${d.notes}`;
     await notify(c.filedById, 'COMPLAINT', msg);
-    if (c.againstId) await notify(c.againstId, 'COMPLAINT', msg); // both parties are told the outcome
+    if (c.againstId) await notify(c.againstId, 'COMPLAINT', msg); 
     await audit(a.id, 'COMPLAINT_RESOLVED', `complaint:${id}`, d.notes);
     res.json({ ok: true });
   }),
 );
 
-// ---------- ratings moderation ----------
 adminRouter.get(
   '/ratings',
   asyncHandler(async (_req, res) => {
@@ -470,9 +450,6 @@ adminRouter.post(
   }),
 );
 
-// =====================================================================
-// Analytics (US-39), logs (US-41), settings (D8)
-// =====================================================================
 adminRouter.get(
   '/analytics',
   asyncHandler(async (req, res) => {
@@ -499,8 +476,8 @@ adminRouter.get(
       users: Object.fromEntries(usersByRole.map((u) => [u.role, u._count])),
       activeUsers: sessions.length,
       orders: { total: orders.length, byStatus },
-      revenue: paid._sum.total ?? 0, // paid order totals (refunded orders excluded)
-      sales: paid._sum.subtotal ?? 0, // produce value, excluding delivery fees
+      revenue: paid._sum.total ?? 0, 
+      sales: paid._sum.subtotal ?? 0, 
       farmerIncome: income._sum.amount ?? 0,
       series: [...perDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({ date, ...v })),
     });
@@ -511,7 +488,7 @@ adminRouter.get(
   '/logs',
   asyncHandler(async (req, res) => {
     const { page, pageSize, skip, take } = pageParams(req.query, 30);
-    const q = str(req.query.search); // matches user name/email or action
+    const q = str(req.query.search); 
     const range = dateRange(req.query);
     const where: Prisma.AuditLogWhereInput = {
       ...(range ? { createdAt: range } : {}),

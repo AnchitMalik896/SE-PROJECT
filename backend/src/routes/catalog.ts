@@ -7,7 +7,6 @@ import { getDeliveryFee } from '../lib/settings.js';
 
 export const catalogRouter = Router();
 
-/** average rating + count for a set of farmers (visible ratings only) */
 export async function farmerRatings(farmerIds: string[]) {
   if (!farmerIds.length) return new Map<string, { avg: number; count: number }>();
   const rows = await prisma.rating.groupBy({
@@ -49,7 +48,6 @@ export function shapeProduct(p: ProductRow, ratings: Map<string, { avg: number; 
   };
 }
 
-// Only products that consumers may actually buy.
 const buyable = {
   active: true,
   takenDownReason: null,
@@ -70,7 +68,6 @@ catalogRouter.get(
   }),
 );
 
-// US-14: search by name/category/farmer, in-stock only, filter by category and price
 catalogRouter.get(
   '/products',
   asyncHandler(async (req, res) => {
@@ -111,7 +108,6 @@ catalogRouter.get(
   }),
 );
 
-// US-15
 catalogRouter.get(
   '/products/:id',
   asyncHandler(async (req, res) => {
@@ -140,7 +136,6 @@ catalogRouter.get(
   }),
 );
 
-// ---------- farmer product management (US-07, US-08) ----------
 export const farmerProductsRouter = Router();
 farmerProductsRouter.use(guard('FARMER'));
 
@@ -215,7 +210,6 @@ farmerProductsRouter.patch(
   }),
 );
 
-// soft delete: keeps order history intact, drops it from search and carts
 farmerProductsRouter.delete(
   '/:id',
   asyncHandler(async (req, res) => {

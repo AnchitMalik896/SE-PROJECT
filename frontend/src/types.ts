@@ -1,5 +1,3 @@
-// Shapes returned by the API (see backend/src/routes/*). Money is always an integer number of paise.
-
 export type Role = 'CONSUMER' | 'FARMER' | 'DELIVERY' | 'ADMIN';
 export type UserStatus = 'ACTIVE' | 'PENDING' | 'REJECTED' | 'BLOCKED';
 export type OrderStatus = 'PLACED' | 'ACCEPTED' | 'PACKED' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
@@ -44,7 +42,6 @@ export interface Category {
   name: string;
 }
 
-/** Public product (marketplace) */
 export interface Product {
   id: string;
   name: string;
@@ -58,7 +55,6 @@ export interface Product {
   farmer: { id: string; name: string; farmName: string; farmLocation: string; rating: number | null; ratingCount: number };
 }
 
-/** Farmer's own product row (GET /farmer/products) */
 export interface FarmerProduct {
   id: string;
   name: string;
@@ -123,7 +119,6 @@ export interface Order {
   subtotal: number;
   deliveryFee: number;
   total: number;
-  /** null for farmers: they never see the customer's address (the delivery partner does) */
   deliveryAddress: string | null;
   cancelReason: string | null;
   createdAt: string;
@@ -135,7 +130,7 @@ export interface Order {
   refunded: number;
   ratedProductIds: string[];
   delivery: OrderDelivery | null;
-  flags?: string[]; // admin lists only
+  flags?: string[]; 
 }
 
 export interface Payment {
@@ -155,7 +150,6 @@ export interface CheckoutResult {
   replayed?: boolean;
 }
 
-/** Delivery partner's view of a delivery */
 export interface Delivery {
   id: string;
   orderId: string;

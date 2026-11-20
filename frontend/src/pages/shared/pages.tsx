@@ -8,7 +8,6 @@ import { errMsg, fieldErrs, useLoad } from '../../hooks';
 import type { Complaint, Notification, Order, Paged, User } from '../../types';
 import { Async, Banner, Button, Empty, Field, Glass, PageHead, Select, StatusBadge, TextArea, useToast } from '../../ui';
 
-// ---------------------------------------------------------------- notifications (US-23)
 const ICON: Record<string, string> = { ORDER: '📦', PAYMENT: '💳', DELIVERY: '🛵', VERIFICATION: '✅', COMPLAINT: '⚖️', PRODUCT: '🏷️' };
 
 export function NotificationsPage() {
@@ -55,7 +54,6 @@ export function NotificationsPage() {
   );
 }
 
-// ---------------------------------------------------------------- profile (US-06)
 export function ProfilePage() {
   const { user, refresh } = useAuth();
   const toast = useToast();
@@ -118,7 +116,6 @@ export function ProfilePage() {
   );
 }
 
-// ---------------------------------------------------------------- help & complaints (feeds admin US-38)
 export function SupportPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();

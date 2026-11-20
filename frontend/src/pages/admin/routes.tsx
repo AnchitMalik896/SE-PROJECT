@@ -10,7 +10,6 @@ import Payments from './Payments';
 import People from './People';
 import Settings from './Settings';
 
-// Paths are absolute (e.g. '/admin'). Rendered inside <Shell> for the ADMIN role.
 export const adminRoutes: RouteObject[] = [
   { path: '/admin', element: <Overview /> },
   { path: '/admin/farmers', element: <Farmers /> },

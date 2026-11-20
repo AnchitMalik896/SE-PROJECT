@@ -8,7 +8,6 @@ import { Async, Banner, Button, ConfirmDialog, Field, Glass, PageHead, StatusBad
 
 const SEND_EVERY_MS = 10_000;
 
-/** US-29: shares live location only while PICKED_UP / ON_THE_WAY. Stops on toggle-off, unmount and delivery end. */
 function LocationSharing({ id, active }: { id: string; active: boolean }) {
   const [on, setOn] = useState(true);
   const [lastSent, setLastSent] = useState<Date | null>(null);
@@ -32,14 +31,13 @@ function LocationSharing({ id, active }: { id: string; active: boolean }) {
     const watch = navigator.geolocation.watchPosition(
       (pos) => {
         if (Date.now() - lastPost.current < SEND_EVERY_MS) return;
-        lastPost.current = Date.now(); // claim the slot so overlapping fixes don't double-send
+        lastPost.current = Date.now(); 
         send(pos.coords.latitude, pos.coords.longitude).catch((e) => setGeoErr(errMsg(e)));
       },
       (err) => setGeoErr(err.code === err.PERMISSION_DENIED ? 'Location permission was denied. Allow it in your browser settings, or send it manually below.' : 'Could not get your location right now. You can send it manually below.'),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 20_000 },
     );
     return () => navigator.geolocation.clearWatch(watch);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, on, id]);
 
   const manual = () => {
